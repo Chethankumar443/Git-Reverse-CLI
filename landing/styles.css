@@ -1628,3 +1628,127 @@
       display: none;
     }
   }
+
+  /* ── 9. Light/Dark Theme Toggle ───────────────────────────── */
+  .theme-toggle {
+    background: transparent;
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-md);
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--color-mute);
+    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+  }
+
+  .theme-toggle:hover {
+    color: var(--color-ink);
+    border-color: var(--color-hairline-strong);
+    background-color: var(--color-surface-elevated);
+  }
+
+  .theme-toggle svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Show/hide moon/sun icons based on active theme */
+  :root[data-theme="light"] .moon-icon {
+    display: block;
+  }
+  :root[data-theme="light"] .sun-icon {
+    display: none;
+  }
+
+  :root:not([data-theme="light"]) .moon-icon {
+    display: none;
+  }
+  :root:not([data-theme="light"]) .sun-icon {
+    display: block;
+  }
+
+  /* Light Theme Token Overrides */
+  :root[data-theme="light"] {
+    --color-primary: #0f172a;
+    --color-primary-pressed: #1e293b;
+    --color-on-primary: #ffffff;
+
+    --color-ink: #0f172a;
+    --color-body: #334155;
+    --color-charcoal: #1e293b;
+    --color-mute: #64748b;
+    --color-ash: #94a3b8;
+    --color-stone: #cbd5e1;
+
+    --color-canvas: #f8f9fa;
+    --color-surface: #ffffff;
+    --color-surface-elevated: #f1f3f5;
+    --color-surface-card: #e2e8f0;
+    --color-hairline: #e2e8f0;
+    --color-hairline-strong: rgba(0, 0, 0, 0.16);
+    --color-hairline-soft: rgba(0, 0, 0, 0.08);
+
+    /* Accents */
+    --color-accent-blue: #0070f3;
+    --color-accent-blue-soft: rgba(0, 112, 243, 0.1);
+    --color-accent-red: #d9383a;
+    --color-accent-red-soft: rgba(217, 56, 58, 0.1);
+    --color-accent-green: #1a7f37;
+    --color-accent-green-soft: rgba(26, 127, 55, 0.1);
+    --color-accent-yellow: #9a6700;
+    --color-accent-yellow-soft: rgba(154, 103, 0, 0.1);
+
+    --hero-stripe-start: #ff8e8e;
+    --hero-stripe-end: #d9383a;
+
+    /* Starlight overrides inside styles.css so it applies site-wide */
+    --sl-color-bg: #f8f9fa;
+    --sl-color-bg-nav: #ffffff;
+    --sl-color-text: #334155;
+    --sl-color-white: #0f172a;
+    --sl-color-hairline: #e2e8f0;
+    --sl-color-accent-high: #9d20c5;
+    --sl-color-accent-low: rgba(184, 57, 223, 0.1);
+    --sl-aside-note-bg: rgba(0, 112, 243, 0.06);
+    --sl-aside-note-border: #0070f3;
+    --sl-aside-tip-bg: rgba(26, 127, 55, 0.06);
+    --sl-aside-tip-border: #1a7f37;
+    --sl-aside-caution-bg: rgba(154, 103, 0, 0.06);
+    --sl-aside-caution-border: #9a6700;
+    --sl-aside-danger-bg: rgba(217, 56, 58, 0.06);
+    --sl-aside-danger-border: #d9383a;
+  }
+
+  /* Light theme specific overrides for text color gradients and styles */
+  :root[data-theme="light"] .display-xl {
+    background: linear-gradient(180deg, #0f172a 0%, #1e293b 60%, #475569 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  :root[data-theme="light"] .hero-stripes-container {
+    opacity: 0.25;
+  }
+
+  /* Adjust TUI elements for better light-theme contrast */
+  :root[data-theme="light"] .command-palette-card {
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08), 0 0 1px rgba(15, 23, 42, 0.1);
+  }
+
+  :root[data-theme="light"] .window-dots .red-dot { background-color: #ff5f56; }
+  :root[data-theme="light"] .window-dots .yellow-dot { background-color: #ffbd2e; }
+  :root[data-theme="light"] .window-dots .green-dot { background-color: #27c93f; }
+
+  :root[data-theme="light"] .starlight-aside,
+  :root[data-theme="light"] .starlight-code-block,
+  :root[data-theme="light"] .pagination-link {
+    background-color: #f1f3f5;
+  }
+
+  :root[data-theme="light"] .pagination-link .label {
+    color: #0f172a;
+  }

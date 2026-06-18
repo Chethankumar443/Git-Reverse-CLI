@@ -3,6 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>
+    (function() {
+      const savedTheme = localStorage.getItem('git-reverse-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    })();
+  </script>
   <title>Git-Reverse — Reverse-engineer any repository in seconds</title>
   <meta name="description" content="Git-Reverse is a developer CLI that transforms complex GitHub repositories into structured LLM prompts. Bypass boilerplate, map architecture, and optimize context windows for Claude and ChatGPT.">
   <meta name="robots" content="index, follow">
@@ -87,6 +93,15 @@
       </nav>
       
       <div class="nav-actions">
+        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+          <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+          </svg>
+          <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+          </svg>
+        </button>
         <button class="btn-primary" id="btn-nav-install">Install CLI</button>
         <button class="nav-toggle" aria-label="Toggle navigation" id="nav-toggle">
           <span></span>
@@ -107,6 +122,7 @@
       <a href="#commands">Commands</a>
       <a href="#onboarding">Onboarding</a>
       <a href="docs.html">Docs</a>
+      <a href="#" id="mobile-theme-toggle" class="mobile-theme-toggle-link">Toggle Theme</a>
       
       <button class="btn-primary" id="btn-drawer-install">Install CLI</button>
     </nav>

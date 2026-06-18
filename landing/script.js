@@ -118,6 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const cameraZ = 450;
 
     function animate() {
+      const isLight = document.documentElement.getAttribute('data-theme') === 'light';
       ctx.clearRect(0, 0, width, height);
 
       rotX += (targetRotX - rotX) * 0.05;
@@ -167,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
           if (dist3d < 110) {
             const alpha = (1 - dist3d / 110) * 0.15 * Math.min(p1.scale, p2.scale);
-            ctx.strokeStyle = `rgba(87, 193, 255, ${alpha})`;
+            ctx.strokeStyle = isLight ? `rgba(9, 105, 218, ${alpha})` : `rgba(87, 193, 255, ${alpha})`;
             ctx.beginPath();
             ctx.moveTo(p1.x, p1.y);
             ctx.lineTo(p2.x, p2.y);
@@ -181,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const radius = Math.max(1, p.scale * 2.2);
         const alpha = Math.min(1, p.scale * 0.4);
         
-        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+        ctx.fillStyle = isLight ? `rgba(15, 23, 42, ${alpha})` : `rgba(255, 255, 255, ${alpha})`;
         ctx.beginPath();
         ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
         ctx.fill();
@@ -463,6 +464,23 @@ document.addEventListener('DOMContentLoaded', () => {
   // Start the simulation loop
   if (mockInput && mockStatusMode && suggestions.length >= 2) {
     runSimulation();
+  }
+
+  // ── 9. Light/Dark Theme Toggle ─────────────────────────────
+  const themeToggles = document.querySelectorAll('#theme-toggle, #mobile-theme-toggle');
+  
+  if (themeToggles.length > 0) {
+    themeToggles.forEach(toggle => {
+      toggle.addEventListener('click', (e) => {
+        if (toggle.tagName === 'A' || toggle.classList.contains('mobile-theme-toggle-link')) {
+          e.preventDefault();
+        }
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('git-reverse-theme', newTheme);
+      });
+    });
   }
 
 });
