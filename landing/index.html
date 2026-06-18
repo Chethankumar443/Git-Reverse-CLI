@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Git-Reverse — Reverse-engineer any repository in seconds</title>
+  <meta name="description" content="Git-Reverse is a developer CLI that transforms complex GitHub repositories into structured LLM prompts. Bypass boilerplate, map architecture, and optimize context windows for Claude and ChatGPT.">
+  <meta name="robots" content="index, follow">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://git-reverse.dev/">
+  <meta property="og:title" content="Git-Reverse — Transform GitHub Repositories into LLM Context Prompts">
+  <meta property="og:description" content="The developer CLI that transforms messy codebases into structured LLM prompts. Bypass boilerplate, map architecture, and feed context directly to Claude or ChatGPT.">
+  <meta property="og:image" content="https://git-reverse.dev/og-image.png">
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://git-reverse.dev/">
+  <meta property="twitter:title" content="Git-Reverse — Transform GitHub Repositories into LLM Context Prompts">
+  <meta property="twitter:description" content="The developer CLI that transforms messy codebases into structured LLM prompts. Bypass boilerplate, map architecture, and feed context directly to Claude or ChatGPT.">
+  <meta property="twitter:image" content="https://git-reverse.dev/og-image.png">
+
+  <link rel="canonical" href="https://git-reverse.dev/" />
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+
+  <!-- Schema.org Software Application -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Git-Reverse",
+    "operatingSystem": "Windows, macOS, Linux",
+    "applicationCategory": "DeveloperApplication",
+    "author": {
+      "@type": "Person",
+      "name": "Git-Reverse Contributors"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.9",
+      "ratingCount": "128"
+    },
+    "description": "A developer CLI that turns complex GitHub repositories into structured architecture and LLM recreation prompts, optimizing context for Claude and ChatGPT."
+  }
+  </script>
+
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- 3D Motion Background Canvas -->
+  <canvas id="bg-canvas"></canvas>
+
+  <!-- Top Hero Diagonal Stripe Gradient Banner -->
+  <div class="hero-stripes-container">
+    <div class="hero-stripe stripe-1"></div>
+    <div class="hero-stripe stripe-2"></div>
+    <div class="hero-stripe stripe-3"></div>
+  </div>
+
+  <!-- Header / Nav -->
+  <header class="primary-nav">
+<div class="nav-container">
+      <div class="nav-brand">
+        <img class="brand-logo" src="logo-icon.png" alt="Git-Reverse Logo">
+        <span class="brand-name">Git-Reverse</span>
+      </div>
+      
+      <nav class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#commands">Commands</a>
+        <a href="#onboarding">Onboarding</a>
+        <a href="docs.html">Docs</a>
+        
+      </nav>
+      
+      <div class="nav-actions">
+        <button class="btn-primary" id="btn-nav-install">Install CLI</button>
+        <button class="nav-toggle" aria-label="Toggle navigation" id="nav-toggle">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      
+      
+
+      
+    </div>
+  </header>
+
+  <!-- Mobile Drawer Menu -->
+  <div class="mobile-nav-drawer" id="mobile-nav-drawer">
+    <nav class="mobile-drawer-links">
+      <a href="#features">Features</a>
+      <a href="#commands">Commands</a>
+      <a href="#onboarding">Onboarding</a>
+      <a href="docs.html">Docs</a>
+      
+      <button class="btn-primary" id="btn-drawer-install">Install CLI</button>
+    </nav>
+  </div>
+
+  <main>
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-container">
+      <div class="hero-content">
+        <div class="badge-new">
+          <span class="badge-info-soft">New</span>
+          <span class="badge-text">v1.1.0 Released — Reverse & Explore modes</span>
+        </div>
+        <h1 class="display-xl">Transform GitHub Repositories into LLM Context Prompts.</h1>
+        <p class="body-lg">
+          The developer CLI that reverse-engineers codebases and generates highly-structured context for Claude and ChatGPT. Bypass boilerplate and optimize your token window.
+        </p>
+        
+        <div class="hero-cta-group">
+          <div class="terminal-install-pill" id="install-pill">
+            <span class="dollar-sign">$</span>
+            <span class="install-command">npm install -g git-reverse-cli --force</span>
+            <button class="copy-btn" aria-label="Copy installation command" id="copy-install-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+            </button>
+          </div>
+          <span class="success-toast" id="copy-toast">Copied to clipboard!</span>
+        </div>
+      </div>
+
+      <!-- TUI Command Palette Mockup -->
+      <div class="hero-mockup-wrapper">
+        <div class="command-palette-card">
+          <!-- Window Header -->
+          <div class="mock-window-header">
+            <div class="window-dots">
+              <span class="dot red-dot"></span>
+              <span class="dot yellow-dot"></span>
+              <span class="dot green-dot"></span>
+            </div>
+            <div class="window-title">git-reverse</div>
+          </div>
+          
+          <!-- Mock TUI Header -->
+          <div class="mock-tui-header">
+          <div class="tui-logo">
+            <span class="cyan-text"> ██████╗ ██╗████████╗      ██████╗ ███████╗██╗   ██╗███████╗██████╗ ███████╗███████╗</span>
+            <span class="cyan-text">██╔════╝ ██║╚══██╔══╝      ██╔══██╗██╔════╝██║   ██║██╔════╝██╔══██╗██╔════╝██╔════╝</span>
+            <span class="cyan-text">██║  ███╗██║   ██║         ██████╔╝█████╗  ██║   ██║█████╗  ██████╔╝███████╗█████╗  </span>
+            <span class="cyan-text">██║   ██║██║   ██║         ██╔══██╗██╔══╝  ╚██╗ ██╔╝██╔══╝  ██╔══██╗╚════██║██╔══╝  </span>
+            <span class="cyan-text">╚██████╔╝██║   ██║         ██║  ██║███████╗ ╚████╔╝ ███████╗██║  ██║███████║███████╗</span>
+            <span class="cyan-text"> ╚═════╝ ╚═╝   ╚═╝         ╚═╝  ╚═╝╚══════╝  ╚═══╝  ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝</span>
+          </div>
+            <div class="tui-meta">
+              <span>v1.1.0</span>
+              <span>·</span>
+              <span class="yellow-text">owl-alpha-Free</span>
+            </div>
+          </div>
+
+          <!-- Mock TUI Input -->
+          <div class="mock-tui-input-row">
+            <span class="prompt-arrow">›</span>
+            <span class="tui-input-text" id="mock-input-text">https://github.com/vitejs/vite</span>
+            <span class="tui-cursor" id="mock-cursor">█</span>
+          </div>
+
+          <!-- Mock TUI Output/Content -->
+          <div class="mock-tui-content">
+            <div class="mock-tui-status-bar">
+              <div class="status-left">
+                <span class="green-text">✓ Ready</span>
+                <span class="dim-text">in</span>
+                <span class="cyan-text bold" id="mock-status-mode">Reverse Mode</span>
+              </div>
+              <div class="status-right">
+                <span class="dim-text">[Tab] to switch mode</span>
+              </div>
+            </div>
+
+            <!-- Command list / Suggestions -->
+            <div class="mock-command-suggestions" id="suggestions-list">
+              <div class="suggestion-row active" data-mode="reverse">
+                <div class="suggestion-main">
+                  <span class="shortcut">🛠️ Reverse Mode</span>
+                  <span class="desc">Generate structured prompt instructions to recreate project</span>
+                </div>
+                <div class="suggestion-key">
+                  <span class="keycap">Tab</span>
+                </div>
+              </div>
+
+              <div class="suggestion-row" data-mode="explore">
+                <div class="suggestion-main">
+                  <span class="shortcut">🔍 Explore Mode</span>
+                  <span class="desc">Ask LLM to explain files, architecture, and design patterns</span>
+                </div>
+                <div class="suggestion-key">
+                  <span class="keycap">Tab</span>
+                </div>
+              </div>
+
+              <div class="suggestion-divider">COMMANDS</div>
+
+              <div class="suggestion-row">
+                <div class="suggestion-main">
+                  <span class="shortcut">/settings</span>
+                  <span class="desc">Modify username, OpenRouter API keys, or selected LLM</span>
+                </div>
+                <div class="suggestion-key">
+                  <span class="keycap">⏎</span>
+                </div>
+              </div>
+
+              <div class="suggestion-row">
+                <div class="suggestion-main">
+                  <span class="shortcut">/sessions</span>
+                  <span class="desc">List and resume previous reverse-engineering runs</span>
+                </div>
+                <div class="suggestion-key">
+                  <span class="keycap">⏎</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Terminal scrollback continuous chat view -->
+            <div id="mock-terminal-view" class="mock-terminal-view" style="display: none;">
+              <!-- User message -->
+              <div class="terminal-msg user-msg" id="mock-user-msg-1" style="display: none;">
+                <span class="cyan-text bold">You:</span>
+                <span class="msg-text">Analyze repository vitejs/vite</span>
+              </div>
+              
+              <!-- Agent message 1 -->
+              <div class="terminal-msg agent-msg" id="mock-agent-msg-1" style="display: none;">
+                <div class="agent-header"><span class="green-text bold">Agent:</span></div>
+                <div class="markdown-body" id="mock-output-1"></div>
+              </div>
+
+              <!-- Clipboard confirmation badge -->
+              <div class="clipboard-success" id="mock-clipboard-success" style="display: none;">
+                <span class="green-text">✓ The prompt has been copied to your clipboard!</span>
+              </div>
+
+              <!-- Follow up input prompt -->
+              <div class="terminal-prompt-row" id="mock-followup-row" style="display: none;">
+                <span class="cyan-text bold">›</span>
+                <span class="followup-input-text" id="mock-followup-input"></span>
+                <span class="tui-cursor" id="mock-followup-cursor">█</span>
+              </div>
+
+              <!-- Agent message 2 -->
+              <div class="terminal-msg agent-msg" id="mock-agent-msg-2" style="display: none;">
+                <div class="agent-header"><span class="green-text bold">Agent:</span></div>
+                <div class="markdown-body" id="mock-output-2"></div>
+              </div>
+
+              <!-- Footnote -->
+              <div class="session-footnote" id="mock-session-footnote" style="display: none;">
+                <span class="dim-text">Press Esc to save and return to dashboard · Session #v1a9dE0C</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features-section" id="features">
+    <div class="section-container">
+      <div class="section-header">
+        <span class="section-tag font-feature">FEATURES</span>
+        <h2 class="display-lg">Automate Codebase Context Generation.</h2>
+        <p class="section-subtitle">
+          Generate high-fidelity AI prompts directly from your local files or GitHub URLs. Stop copy-pasting code and let the smart ignore engine handle the noise.
+        </p>
+      </div>
+
+      <div class="features-grid">
+        <!-- Feature 1 -->
+        <div class="feature-card-dark">
+          <div class="feature-icon-wrapper blue-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+              <path d="M12 6v6l4 2"/>
+            </svg>
+          </div>
+          <h3 class="heading-md">Dual-Mode Toggling</h3>
+          <p class="body-sm">
+            Press <span class="keycap">Tab</span> instantly on the dashboard to switch between **Reverse Mode** (generate prompts to rebuild) and **Explore Mode** (educational codebase query).
+          </p>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="feature-card-dark">
+          <div class="feature-icon-wrapper green-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <h3 class="heading-md">Smart Ignore Engine</h3>
+          <p class="body-sm">
+            Powered by the `ignore` package. Automatically bypasses lockfiles, node_modules, build artifacts, images, and binary blobs to keep token windows optimized.
+          </p>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="feature-card-dark">
+          <div class="feature-icon-wrapper yellow-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+              <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+            </svg>
+          </div>
+          <h3 class="heading-md">Auto-Clipboard Copy</h3>
+          <p class="body-sm">
+            No more dragging your cursor across 1,000 lines of terminal output. Generates and silently copies the final prompt directly into your system clipboard.
+          </p>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="feature-card-dark">
+          <div class="feature-icon-wrapper red-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="12 2 2 22 22 22"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          </div>
+          <h3 class="heading-md">Local Config Merging</h3>
+          <p class="body-sm">
+            Define a local `.gitreverse` file inside any project directory to automatically merge specific token, model, or exclude list overrides on top of global settings.
+          </p>
+        </div>
+
+        <!-- Feature 5 -->
+        <div class="feature-card-dark">
+          <div class="feature-icon-wrapper blue-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M8 12h8M12 8v8"/>
+            </svg>
+          </div>
+          <h3 class="heading-md">Fuzzy Context Search</h3>
+          <p class="body-sm">
+            Type <span class="keycap">@</span> inside your CLI query prompt to open an interactive file tree. Fuzzy-search and attach only relevant files directly to the prompt context.
+          </p>
+        </div>
+
+        <!-- Feature 6 -->
+        <div class="feature-card-dark">
+          <div class="feature-icon-wrapper green-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+              <line x1="12" y1="22.08" x2="12" y2="12"/>
+            </svg>
+          </div>
+          <h3 class="heading-md">Token-Safety Warning</h3>
+          <p class="body-sm">
+            Count tokens locally with `gpt-tokenizer` before calling OpenRouter. Warns you if the repo is too large to prevent raw, expensive 400 errors.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Commands & Shortcuts Section -->
+  <section class="commands-section" id="commands">
+    <div class="section-container">
+      <div class="section-header">
+        <span class="section-tag font-feature">CLI COMMANDS</span>
+        <h2 class="display-lg">Control at your fingertips.</h2>
+        <p class="section-subtitle">
+          Slash commands and shortcuts let you run updates, adjust settings, and manage sessions without leaving the interactive prompt.
+        </p>
+      </div>
+
+      <div class="commands-table-wrapper">
+        <table class="commands-table">
+          <thead>
+            <tr>
+              <th>Command</th>
+              <th>Description</th>
+              <th>Trigger</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="cyan-text font-feature">/settings</span> <span class="dim-text">or</span> <span class="cyan-text font-feature">\settings</span></td>
+              <td>Opens the persistent settings editor to modify API keys, username, or default models.</td>
+              <td><span class="keycap">⏎</span> Enter</td>
+            </tr>
+            <tr>
+              <td><span class="cyan-text font-feature">/update</span> <span class="dim-text">or</span> <span class="cyan-text font-feature">\update</span></td>
+              <td>Checks npm registry, cleanly exits React/Ink, and updates globally via npm.</td>
+              <td><span class="keycap">⏎</span> Enter</td>
+            </tr>
+            <tr>
+              <td><span class="cyan-text font-feature">/compact</span> <span class="dim-text">or</span> <span class="cyan-text font-feature">\compact</span></td>
+              <td>Compresses the output into a highly dense bulleted architectural digest.</td>
+              <td><span class="keycap">⏎</span> Enter</td>
+            </tr>
+            <tr>
+              <td><span class="cyan-text font-feature">/deepdive</span> <span class="dim-text">or</span> <span class="cyan-text font-feature">\deepdive</span></td>
+              <td>Triggers detailed learning path and scaling pitfall analysis in the final output.</td>
+              <td><span class="keycap">⏎</span> Enter</td>
+            </tr>
+            <tr>
+              <td><span class="cyan-text font-feature">/sessions</span> <span class="dim-text">or</span> <span class="cyan-text font-feature">\sessions</span></td>
+              <td>Lists all saved runs with their Nanoid references and timestamps.</td>
+              <td><span class="keycap">⏎</span> Enter</td>
+            </tr>
+            <tr>
+              <td><span class="cyan-text font-feature">/resume &lt;id&gt;</span> <span class="dim-text">or</span> <span class="cyan-text font-feature">\resume &lt;id&gt;</span></td>
+              <td>Instantly resumes a past analysis session using its unique 8-character ID.</td>
+              <td><span class="keycap">⏎</span> Enter</td>
+            </tr>
+            <tr>
+              <td><span class="cyan-text font-feature">/quit</span> <span class="dim-text">or</span> <span class="cyan-text font-feature">\quit</span></td>
+              <td>Saves the current session history and closes the program.</td>
+              <td><span class="keycap">⏎</span> Enter</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Onboarding Walkthrough -->
+  <section class="onboarding-section" id="onboarding">
+    <div class="section-container">
+      <div class="section-header">
+        <span class="section-tag font-feature">WALKTHROUGH</span>
+        <h2 class="display-lg">How to reverse-engineer codebases in 3 steps.</h2>
+        <p class="section-subtitle">
+          Onboarding takes less than a minute. Git-Reverse configures everything locally on first startup.
+        </p>
+      </div>
+
+      <div class="walkthrough-steps">
+        <div class="walkthrough-step">
+          <div class="step-num">01</div>
+          <h3 class="heading-md">First-Time Setup</h3>
+          <p class="body-sm">
+            Launch `Git-Reverse` globally. The TUI will ask for your name and your OpenRouter API key, providing a clickable link to fetch it.
+          </p>
+        </div>
+
+        <div class="walkthrough-step">
+          <div class="step-num">02</div>
+          <h3 class="heading-md">Select Your Model</h3>
+          <p class="body-sm">
+            Choose from a lists of free, high-speed LLMs (or configure any paid model in settings). Settings are written locally to your UserConfig.
+          </p>
+        </div>
+
+        <div class="walkthrough-step">
+          <div class="step-num">03</div>
+          <h3 class="heading-md">Analyze & Copy</h3>
+          <p class="body-sm">
+            Paste any GitHub URL or local path. The CLI streams the markdown output live, highlighting syntax, and copies the prompt to your clipboard.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer-section">
+    <div class="footer-container">
+      <div class="footer-info">
+        <div class="nav-brand">
+          <img class="brand-logo" src="logo-icon.png" alt="Git-Reverse Logo">
+        <span class="brand-name">Git-Reverse</span>
+        </div>
+        <p class="body-sm footer-desc">
+          An open-source developer tool to decode codebases and translate them into prompt-engineerable assets.
+        </p>
+      </div>
+
+      <div class="footer-links-group">
+        <div class="footer-col">
+          <h4 class="footer-col-title font-feature">Product</h4>
+          <a href="#features">Features</a>
+          <a href="#commands">Commands</a>
+          <a href="#onboarding">Walkthrough</a>
+        </div>
+        <div class="footer-col">
+          <h4 class="footer-col-title font-feature">Documentation</h4>
+          <a href="docs.html">Overview</a>
+          <a href="docs.html#doc-install">Installation</a>
+          <a href="docs.html#doc-modes">Usage</a>
+         
+        </div>
+        <div class="footer-col">
+          <h4 class="footer-col-title font-feature">Resources</h4>
+          <a href="https://github.com/openrouter-ai" target="_blank" rel="noopener">OpenRouter API</a>
+          <a href="https://www.npmjs.com/package/get-sence" target="_blank" rel="noopener">NPM Registry</a>
+          <a href="https://github.com/Chethankumar443/Git-Reverse-CLI" target="_blank" rel="noopener">Developer</a>
+        </div>
+      </div>
+    </div>
+    
+    <div class="footer-bottom">
+      <div class="footer-copy">
+        &copy; 2026 Git-Reverse. Released under the MIT License.
+      </div>
+      <div class="footer-meta">
+        <span class="dim-text">Designed in Dark Canvas style</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

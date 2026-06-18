@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Git-Reverse Documentation - User Guide & Commands</title>
+  <meta name="description" content="Official documentation for Git-Reverse CLI. Learn how to generate LLM context prompts, use reverse/explore modes, and configure local settings.">
+  <meta name="robots" content="index, follow">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://git-reverse.dev/docs.html">
+  <meta property="og:title" content="Git-Reverse Documentation - User Guide & Commands">
+  <meta property="og:description" content="Official documentation for Git-Reverse CLI. Learn how to generate LLM context prompts, use reverse/explore modes, and configure local settings.">
+  <meta property="og:image" content="https://git-reverse.dev/og-image.png">
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://git-reverse.dev/docs.html">
+  <meta property="twitter:title" content="Git-Reverse Documentation - User Guide & Commands">
+  <meta property="twitter:description" content="Official documentation for Git-Reverse CLI. Learn how to generate LLM context prompts, use reverse/explore modes, and configure local settings.">
+  <meta property="twitter:image" content="https://git-reverse.dev/og-image.png">
+
+  <link rel="canonical" href="https://git-reverse.dev/docs.html" />
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+
+  <!-- Schema.org TechArticle -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Git-Reverse Documentation - User Guide & Commands",
+    "description": "Official documentation for Git-Reverse CLI. Learn how to generate LLM context prompts, use reverse/explore modes, and configure local settings.",
+    "author": {
+      "@type": "Organization",
+      "name": "Git-Reverse"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Git-Reverse",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://git-reverse.dev/og-image.png"
+      }
+    }
+  }
+  </script>
+  
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="starlight.css">
+</head>
+<body>
+
+  <!-- Header / Nav -->
+  <header class="primary-nav">
+<div class="nav-container">
+      <div class="nav-brand" onclick="window.location.href='index.html'">
+        <img class="brand-logo" src="logo-icon.png" alt="Git-Reverse Logo">
+        <span class="brand-name">Git-Reverse</span>
+      </div>
+      
+      <nav class="nav-links">
+        <a href="index.html#features">Features</a>
+        <a href="index.html#commands">Commands</a>
+        <a href="index.html#onboarding">Onboarding</a>
+        <a href="docs.html">Docs</a>
+      </nav>
+      
+      <div class="nav-actions">
+        <button class="btn-primary" id="btn-nav-install">Install CLI</button>
+        <button class="nav-toggle" aria-label="Toggle navigation" id="nav-toggle">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile Drawer Menu -->
+  <div class="mobile-nav-drawer" id="mobile-nav-drawer">
+    <nav class="mobile-drawer-links">
+      <a href="index.html#features">Features</a>
+      <a href="index.html#commands">Commands</a>
+      <a href="index.html#onboarding">Onboarding</a>
+      <a href="docs.html">Docs</a>
+      
+      <button class="btn-primary" id="btn-drawer-install">Install CLI</button>
+    </nav>
+  </div>
+
+  <!-- Documentation Section -->
+  <div class="starlight-layout">
+    
+    <!-- Left Sidebar: Site Navigation -->
+    <aside class="starlight-sidebar">
+      <details open>
+        <summary>Start Here
+          <svg viewBox="0 0 24 24" fill="none"><path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </summary>
+        <ul>
+          <li><a href="#doc-install" class="active">Install</a></li>
+          <li><a href="#doc-launch">First Launch</a></li>
+        </ul>
+      </details>
+      
+      <details open>
+        <summary>Core Concepts
+          <svg viewBox="0 0 24 24" fill="none"><path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </summary>
+        <ul>
+          <li><a href="#doc-analyze">Analyze</a></li>
+          <li><a href="#doc-modes">Modes</a></li>
+        </ul>
+      </details>
+      
+      <details open>
+        <summary>Reference
+          <svg viewBox="0 0 24 24" fill="none"><path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </summary>
+        <ul>
+          <li><a href="#doc-commands">Commands</a></li>
+          <li><a href="#doc-output">Output</a></li>
+          <li><a href="#doc-sessions">Sessions</a></li>
+          <li><a href="#doc-privacy">Privacy</a></li>
+        </ul>
+      </details>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="starlight-main">
+      <div class="starlight-breadcrumbs">
+        <span>Docs</span> <span class="separator">/</span> <span class="current">Overview</span>
+      </div>
+      
+      <h1 class="starlight-gradient-text" style="font-size: 48px; margin: 0 0 24px 0; letter-spacing: -1px; font-weight: 700;">
+        Documentation
+      </h1>
+      <p style="font-size: 18px; color: var(--sl-color-text); margin-bottom: 48px; max-width: 65ch;">
+        Everything you need to know about installing, setting up, navigating modes, running commands, analyzing outputs, managing sessions, and privacy.
+      </p>
+
+      <!-- Install -->
+      <section id="doc-install" class="starlight-section">
+        <h2>Install</h2>
+        <p>Install Git-Reverse globally using npm to access it from anywhere in your terminal.</p>
+        <div class="starlight-code-block">
+          <code><span style="color: #57c1ff;">$</span> npm install -g git-reverse-cli --force</code>
+        </div>
+      </section>
+
+      <!-- First Launch -->
+      <section id="doc-launch" class="starlight-section">
+        <h2>First Launch</h2>
+        <p>On your first run, the CLI will prompt you for your setup details. These are stored locally.</p>
+        
+        <div class="starlight-aside starlight-aside-note">
+          <div class="aside-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            Note
+          </div>
+          <div class="aside-content">
+            You will need an <strong>OpenRouter API Key</strong> to access free and premium LLMs. A direct link is provided during setup.
+          </div>
+        </div>
+
+        <ul class="starlight-list">
+          <li><strong>Username:</strong> How the CLI addresses you.</li>
+          <li><strong>OpenRouter API Key:</strong> Used to access free and premium LLMs.</li>
+          <li><strong>Model Selection:</strong> Choose a default model for your queries.</li>
+        </ul>
+      </section>
+
+      <!-- Analyze -->
+      <section id="doc-analyze" class="starlight-section">
+        <h2>Analyze</h2>
+        <p>Start an analysis by providing a target repository or local folder.</p>
+        <div class="starlight-code-block">
+          <div class="code-comment"># Analyze a GitHub repository</div>
+          <code><span style="color: #57c1ff;">$</span> git-reverse https://github.com/vitejs/vite</code>
+          <br><br>
+          <div class="code-comment"># Analyze the current local directory</div>
+          <code><span style="color: #57c1ff;">$</span> git-reverse .</code>
+          <br><br>
+          <div class="code-comment"># Analyze with an initial query</div>
+          <code><span style="color: #57c1ff;">$</span> git-reverse . "Explain the authentication flow"</code>
+        </div>
+      </section>
+
+      <!-- Modes -->
+      <section id="doc-modes" class="starlight-section">
+        <h2>Modes</h2>
+        <p>Toggle between modes seamlessly within the CLI using the <code>Tab</code> key.</p>
+        <ul class="starlight-list">
+          <li><strong>Standard / Reverse:</strong> Generates prompts to rebuild the project.</li>
+          <li><strong>Deep-dive:</strong> Detailed learning path and scaling pitfall analysis.</li>
+          <li><strong>Compact:</strong> Highly dense bulleted architectural digest.</li>
+          <li><strong>Explore:</strong> Ask LLMs to explain files, architecture, and design patterns.</li>
+        </ul>
+      </section>
+
+      <!-- Commands -->
+      <section id="doc-commands" class="starlight-section">
+        <h2>Commands</h2>
+        <p>Type a forward slash <code>/</code> or backslash <code>\</code> in the interactive prompt to run commands.</p>
+        <ul class="starlight-list">
+          <li><code>/settings</code> — Modify API keys and models.</li>
+          <li><code>/update</code> — Force update the CLI globally.</li>
+          <li><code>/deepdive</code> — Toggle deep-dive mode.</li>
+          <li><code>/compact</code> — Toggle compact mode.</li>
+          <li><code>/sessions</code> — List all saved runs.</li>
+          <li><code>/resume &lt;id&gt;</code> — Resume a past session.</li>
+          <li><code>/quit</code> — Save history and exit.</li>
+        </ul>
+      </section>
+
+      <!-- Output -->
+      <section id="doc-output" class="starlight-section">
+        <h2>Output</h2>
+        <p>The CLI generates a structured recreation prompt which includes:</p>
+        <ul class="starlight-list">
+          <li>Project Overview & Tech Stack</li>
+          <li>System Architecture</li>
+          <li>Key Files Content (bypassing ignores)</li>
+          <li>Design Decisions & Build Process</li>
+          <li>Step-by-step Recreation Instructions</li>
+        </ul>
+      </section>
+
+      <!-- Sessions -->
+      <section id="doc-sessions" class="starlight-section">
+        <h2>Sessions</h2>
+        <p>Every interaction is automatically saved locally with an 8-character ID.</p>
+        
+        <div class="starlight-aside starlight-aside-tip">
+          <div class="aside-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
+            Tip
+          </div>
+          <div class="aside-content">
+            You can resume any session right from the terminal using the <code>--resume</code> flag!
+          </div>
+        </div>
+
+        <div class="starlight-code-block">
+          <code><span style="color: #57c1ff;">$</span> git-reverse --resume a1b2c3d4</code>
+        </div>
+      </section>
+
+      <!-- Privacy -->
+      <section id="doc-privacy" class="starlight-section">
+        <h2>Privacy</h2>
+        <p>All configurations and sessions are stored strictly on your local machine. No telemetry or tracking is included.</p>
+        
+        <div class="starlight-aside starlight-aside-caution">
+          <div class="aside-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            Caution
+          </div>
+          <div class="aside-content">
+            Since your API keys are stored locally, be careful not to share your configuration files if you stream your terminal.
+          </div>
+        </div>
+
+        <ul class="starlight-list">
+          <li><strong>Linux/Mac:</strong> <code>~/.config/git-reverse/</code></li>
+          <li><strong>Windows:</strong> <code>%APPDATA%\git-reverse\</code></li>
+        </ul>
+      </section>
+    </main>
+    <!-- Right Sidebar: Table of Contents -->
+    <aside class="starlight-toc">
+      <h4>On this page</h4>
+      <ul>
+        <li><a href="#doc-install">Install</a></li>
+        <li><a href="#doc-launch">First Launch</a></li>
+        <li><a href="#doc-analyze">Analyze</a></li>
+        <li><a href="#doc-modes">Modes</a></li>
+        <li><a href="#doc-commands">Commands</a></li>
+        <li><a href="#doc-output">Output</a></li>
+        <li><a href="#doc-sessions">Sessions</a></li>
+        <li><a href="#doc-privacy">Privacy</a></li>
+      </ul>
+    </aside>
+
+  </div>
+
+  <script>
+    // Smooth scroll and active state for TOC
+    const sections = document.querySelectorAll('.starlight-section');
+    const tocLinks = document.querySelectorAll('.starlight-toc a');
+    
+    window.addEventListener('scroll', () => {
+      let current = '';
+      sections.forEach(section => {
+        const sectionTop = section.offsetTop;
+        if (pageYOffset >= sectionTop - 150) {
+          current = section.getAttribute('id');
+        }
+      });
+      
+      tocLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href') === '#' + current) {
+          link.classList.add('active');
+        }
+      });
+    });
+  </script>
+
+  <!-- Footer -->
+  <footer class="footer-section">
+    <div class="footer-container">
+      <div class="footer-info">
+        <div class="nav-brand" onclick="window.location.href='index.html'">
+          <img class="brand-logo" src="logo-icon.png" alt="Git-Reverse Logo">
+        <span class="brand-name">Git-Reverse</span>
+        </div>
+        <p class="body-sm footer-desc">
+          An open-source developer tool to decode codebases and translate them into prompt-engineerable assets.
+        </p>
+      </div>
+
+      <div class="footer-links-group">
+        <div class="footer-col">
+          <h4 class="footer-col-title font-feature">Product</h4>
+          <a href="index.html#features">Features</a>
+          <a href="index.html#commands">Commands</a>
+          <a href="index.html#onboarding">Walkthrough</a>
+        </div>
+        <div class="footer-col">
+          <h4 class="footer-col-title font-feature">Documentation</h4>
+          <a href="docs.html">Overview</a>
+          <a href="docs.html#doc-install">Installation</a>
+          <a href="docs.html#doc-modes">Usage</a>
+        </div>
+        <div class="footer-col">
+          <h4 class="footer-col-title font-feature">Resources</h4>
+          <a href="https://github.com/openrouter-ai" target="_blank" rel="noopener">OpenRouter API</a>
+          <a href="https://www.npmjs.com/package/get-sence" target="_blank" rel="noopener">NPM Registry</a>
+          <a href="https://github.com/chethan" target="_blank" rel="noopener">Developer</a>
+        </div>
+      </div>
+    </div>
+    
+    <div class="footer-bottom">
+      <div class="footer-copy">
+        &copy; 2026 Git-Reverse. Released under the MIT License.
+      </div>
+      <div class="footer-meta">
+        <span class="dim-text">Designed in Dark Canvas style</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
