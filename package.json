@@ -23,7 +23,7 @@
   ],
   "scripts": {
     "dev": "tsx watch src/cli.tsx",
-    "build": "tsup",
+    "build": "tsup && node scripts/build-web.js",
     "start": "tsx src/cli.tsx",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
