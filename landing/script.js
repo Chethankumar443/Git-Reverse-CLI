@@ -44,16 +44,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  if (copyBtn) copyBtn.addEventListener('click', () => handleCopy('npx get-sence'));
+  if (copyBtn) copyBtn.addEventListener('click', () => handleCopy('npm install -g git-reverse-cli --force'));
   if (installPill) {
     installPill.style.cursor = 'pointer';
-    installPill.addEventListener('click', () => handleCopy('npx get-sence'));
+    installPill.addEventListener('click', () => handleCopy('npm install -g git-reverse-cli --force'));
   }
 
   const navInstall = document.getElementById('btn-nav-install');
   const drawerInstall = document.getElementById('btn-drawer-install');
-  if (navInstall) navInstall.addEventListener('click', () => handleCopy('npx get-sence'));
-  if (drawerInstall) drawerInstall.addEventListener('click', () => handleCopy('npx get-sence'));
+  if (navInstall) navInstall.addEventListener('click', () => handleCopy('npm install -g git-reverse-cli --force'));
+  if (drawerInstall) drawerInstall.addEventListener('click', () => handleCopy('npm install -g git-reverse-cli --force'));
 
   // ── 2. Mobile Nav Drawer Toggle ───────────────────────────
   const navToggle = document.getElementById('nav-toggle');
