@@ -1,6 +1,7 @@
 import { Navbar } from "./components/sections/Navbar";
 import { Hero } from "./components/sections/Hero";
 import { Features } from "./components/sections/Features";
+import { Showcase } from "./components/sections/Showcase";
 import { Commands } from "./components/sections/Commands";
 import { Onboarding } from "./components/sections/Onboarding";
 import { Docs } from "./components/sections/Docs";
@@ -15,6 +16,7 @@ function App() {
       <main>
         <Hero />
         <Features />
+        <Showcase />
         <Commands />
         <Onboarding />
         <Docs />
