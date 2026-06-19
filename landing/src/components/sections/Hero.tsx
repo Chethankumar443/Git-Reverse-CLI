@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Terminal } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "react-router-dom";
 
 const techStack = [
   "TypeScript",
@@ -61,19 +62,19 @@ export const Hero = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
         >
-          {/* Glowing CTA Button */}
-          <div className="relative group">
-            <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-emerald-500 via-sky-500 to-emerald-500 opacity-60 blur-md transition-all duration-500 group-hover:opacity-100 group-hover:duration-200 animate-gradient-xy" />
-            <button className="relative flex h-12 items-center justify-center px-8 bg-zinc-950 text-zinc-100 rounded-full font-medium transition-all hover:bg-zinc-900 border border-zinc-800 hover:border-zinc-700">
-              <Terminal className="mr-2 h-5 w-5 text-emerald-400" />
-              Install CLI
-            </button>
-          </div>
+          {/* Solid CTA Button */}
+          <button className="flex h-12 items-center justify-center px-8 bg-zinc-100 text-zinc-950 rounded-full font-medium transition-all hover:bg-zinc-300">
+            <Terminal className="mr-2 h-5 w-5" />
+            Install CLI
+          </button>
 
-          <button className="flex h-12 items-center justify-center px-8 text-zinc-400 hover:text-zinc-50 rounded-full font-medium transition-colors">
+          <Link
+            to="/docs"
+            className="flex h-12 items-center justify-center px-8 text-zinc-400 hover:text-zinc-50 rounded-full font-medium transition-colors"
+          >
             Read Docs
             <ArrowRight className="ml-2 h-4 w-4" />
-          </button>
+          </Link>
         </motion.div>
       </div>
 

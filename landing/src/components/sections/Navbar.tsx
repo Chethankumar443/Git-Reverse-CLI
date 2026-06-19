@@ -2,37 +2,48 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 export const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const navLinks = [
-    { label: "Features", href: "#features" },
-    { label: "Commands", href: "#commands" },
-    { label: "Walkthrough", href: "#onboarding" },
-    { label: "Docs", href: "/docs" },
+    { label: "Features", href: "/#features", isHash: true },
+    { label: "Commands", href: "/#commands", isHash: true },
+    { label: "Walkthrough", href: "/#onboarding", isHash: true },
+    { label: "Docs", href: "/docs", isHash: false },
   ];
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-zinc-800/50 bg-zinc-950/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 md:px-6">
-        <a href="/" className="flex items-center gap-2.5 group">
+        <Link to="/" className="flex items-center gap-2.5 group">
           <Terminal className="h-5 w-5 text-emerald-400 transition-transform group-hover:rotate-[-8deg]" />
           <span className="text-base font-semibold tracking-tight text-zinc-100">
             Git-Reverse
           </span>
-        </a>
+        </Link>
 
         <nav className="hidden md:flex items-center gap-8">
-          {navLinks.map((link) => (
-            <a
-              key={link.label}
-              href={link.href}
-              className="text-sm text-zinc-400 transition-colors hover:text-zinc-100"
-            >
-              {link.label}
-            </a>
-          ))}
+          {navLinks.map((link) =>
+            link.isHash ? (
+              <a
+                key={link.label}
+                href={link.href}
+                className="text-sm text-zinc-400 transition-colors hover:text-zinc-100"
+              >
+                {link.label}
+              </a>
+            ) : (
+              <Link
+                key={link.label}
+                to={link.href}
+                className="text-sm text-zinc-400 transition-colors hover:text-zinc-100"
+              >
+                {link.label}
+              </Link>
+            )
+          )}
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
@@ -72,16 +83,27 @@ export const Navbar = () => {
             className="overflow-hidden border-t border-zinc-800/50 md:hidden bg-zinc-950/95 backdrop-blur-xl"
           >
             <div className="flex flex-col gap-1 p-4">
-              {navLinks.map((link) => (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  className="rounded-lg px-4 py-3 text-sm text-zinc-400 transition-colors hover:bg-zinc-800/50 hover:text-zinc-100"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  {link.label}
-                </a>
-              ))}
+              {navLinks.map((link) =>
+                link.isHash ? (
+                  <a
+                    key={link.label}
+                    href={link.href}
+                    className="rounded-lg px-4 py-3 text-sm text-zinc-400 transition-colors hover:bg-zinc-800/50 hover:text-zinc-100"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    {link.label}
+                  </a>
+                ) : (
+                  <Link
+                    key={link.label}
+                    to={link.href}
+                    className="rounded-lg px-4 py-3 text-sm text-zinc-400 transition-colors hover:bg-zinc-800/50 hover:text-zinc-100"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
+                )
+              )}
               <div className="mt-3 border-t border-zinc-800/50 pt-3">
                 <Button
                   className="w-full h-10 rounded-full bg-emerald-500 text-zinc-950 hover:bg-emerald-400 text-sm font-medium"
