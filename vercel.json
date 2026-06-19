@@ -1,15 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "outputDirectory": "landing",
+  "buildCommand": "echo 'Static site deployed'",
   "cleanUrls": true,
   "trailingSlash": false,
-  "rewrites": [
-    { "source": "/", "destination": "/landing/index.html" },
-    { "source": "/docs", "destination": "/landing/docs.html" },
-    { "source": "/docs.html", "destination": "/landing/docs.html" }
-  ],
   "headers": [
     {
-      "source": "/(.*)\\.(css|js)",
+      "source": "/(.*)\\.(css|js|svg|png|ico)",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=3600, must-revalidate" }
       ]
