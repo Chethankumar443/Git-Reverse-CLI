@@ -49,11 +49,8 @@ export function App({ resumeSessionId, initialUrl, initialModel, autoCopy, onUpd
   const cached = getCachedModels();
 
   const initialScreen: AppScreen = (() => {
-    if (!user.setupComplete || !user.apiKey) {
-      return user.name ? 'setup-apikey' : 'setup-username';
-    }
     if (resumeSessionId) return 'resume-session';
-    if (initialUrl) return 'analysis';
+    if (initialUrl) return 'dashboard';
     return 'splash';
   })();
 
@@ -105,6 +102,15 @@ export function App({ resumeSessionId, initialUrl, initialModel, autoCopy, onUpd
   };
 
   // ── Screen handlers ───────────────────────────────────────
+
+  const handleSplashComplete = () => {
+    const currentUser = getMergedUserConfig();
+    if (!currentUser.setupComplete || !currentUser.apiKey) {
+      navigateTo(currentUser.name ? 'setup-apikey' : 'setup-username');
+    } else {
+      navigateTo('dashboard');
+    }
+  };
 
   const handleUsernameComplete = (name: string) => {
     setUsername(name);
@@ -168,7 +174,7 @@ export function App({ resumeSessionId, initialUrl, initialModel, autoCopy, onUpd
       )}
 
       {screen === 'splash' && (
-        <SplashScreen onComplete={() => navigateTo('dashboard')} />
+        <SplashScreen onComplete={handleSplashComplete} />
       )}
 
       {screen === 'setup-username' && (

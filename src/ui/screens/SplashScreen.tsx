@@ -41,7 +41,7 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
         </Box>
 
         <Box justifyContent="center" marginBottom={2}>
-          <Text color="white">Developer by: </Text>
+          <Text color="white">Developed by: </Text>
           <Text color="green" bold underline>Chethan Kumar Jagadish Ulavi</Text>
         </Box>
 
