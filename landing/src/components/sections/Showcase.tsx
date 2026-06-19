@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { motion, useAnimation } from "framer-motion";
+import { motion } from "framer-motion";
 import { Terminal, Code, Cpu } from "lucide-react";
 
 const streamingText = `Analyzing src/core/SessionManager.ts...
@@ -30,8 +30,7 @@ public async calculateTokens(files: string[]): Promise<number> {
 
 Analysis complete. Total context tokens: **4,821**`;
 
-const codeBlockRegex = /```typescript([\s\S]*?)```/g;
-const boldRegex = /\*\*(.*?)\*\*/g;
+
 
 // A naive but effective parser for the streaming text
 const parseMarkdown = (text: string) => {
