@@ -3,7 +3,7 @@
 //  Shows recent sessions, allows resume by ID
 // ─────────────────────────────────────────────────────────────
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Box, Text, useInput } from 'ink';
 import TextInput from 'ink-text-input';
 import { SessionManager } from '../../core/SessionManager.js';
@@ -22,10 +22,16 @@ export function ResumeSession({ initialId = '', onResume, onBack }: ResumeSessio
   const [error, setError] = useState('');
   const recentSessions = SessionManager.listSessions().slice(0, 8);
 
-  // Esc to go back
-  useInput((_, key) => {
-    if (key.escape) onBack();
-  });
+  // Stable identity across renders — prevents Ink's useInput effect from
+  // tearing down/re-registering and dropping keypresses.
+  const handleKey = useCallback(
+    (_: string, key: { escape: boolean }) => {
+      if (key.escape) onBack();
+    },
+    [onBack],
+  );
+
+  useInput(handleKey);
 
 
 
