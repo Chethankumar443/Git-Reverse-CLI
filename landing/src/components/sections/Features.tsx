@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, useMotionTemplate, useMotionValue } from "framer-motion";
 import {
   ToggleLeft,
   Filter,
@@ -7,6 +7,7 @@ import {
   Search,
   Shield,
 } from "lucide-react";
+import React from "react";
 
 const features = [
   {
@@ -59,31 +60,36 @@ const features = [
   },
 ];
 
-const accentMap: Record<string, { bg: string; text: string; border: string }> = {
+const accentMap: Record<string, { bg: string; text: string; border: string; glow: string }> = {
   emerald: {
     bg: "bg-emerald-500/10",
     text: "text-emerald-400",
     border: "border-emerald-500/20",
+    glow: "rgba(52, 211, 153, 0.15)",
   },
   sky: {
     bg: "bg-sky-500/10",
     text: "text-sky-400",
     border: "border-sky-500/20",
+    glow: "rgba(56, 189, 248, 0.15)",
   },
   amber: {
     bg: "bg-amber-500/10",
     text: "text-amber-400",
     border: "border-amber-500/20",
+    glow: "rgba(251, 191, 36, 0.15)",
   },
   rose: {
     bg: "bg-rose-500/10",
     text: "text-rose-400",
     border: "border-rose-500/20",
+    glow: "rgba(251, 113, 133, 0.15)",
   },
   violet: {
     bg: "bg-violet-500/10",
     text: "text-violet-400",
     border: "border-violet-500/20",
+    glow: "rgba(167, 139, 250, 0.15)",
   },
 };
 
@@ -105,12 +111,61 @@ const itemVariants = {
   },
 };
 
+function FeatureCard({ feature }: { feature: typeof features[0] }) {
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  function handleMouseMove({
+    currentTarget,
+    clientX,
+    clientY,
+  }: React.MouseEvent<HTMLDivElement>) {
+    const { left, top } = currentTarget.getBoundingClientRect();
+    mouseX.set(clientX - left);
+    mouseY.set(clientY - top);
+  }
+
+  const colors = accentMap[feature.accent];
+  const Icon = feature.icon;
+
+  return (
+    <motion.div
+      variants={itemVariants}
+      onMouseMove={handleMouseMove}
+      className={`${feature.span} group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-zinc-800/60 bg-zinc-950/40 p-6 md:p-8 backdrop-blur-md transition-all duration-300 hover:border-zinc-700/80`}
+    >
+      <motion.div
+        className="pointer-events-none absolute -inset-px rounded-2xl opacity-0 transition duration-300 group-hover:opacity-100"
+        style={{
+          background: useMotionTemplate`
+            radial-gradient(
+              650px circle at ${mouseX}px ${mouseY}px,
+              ${colors.glow},
+              transparent 80%
+            )
+          `,
+        }}
+      />
+      <div className="relative z-10">
+        <div
+          className={`mb-5 inline-flex h-10 w-10 items-center justify-center rounded-xl ${colors.bg} ${colors.border} border backdrop-blur-sm`}
+        >
+          <Icon className={`h-5 w-5 ${colors.text}`} />
+        </div>
+        <h3 className="mb-2 text-lg font-semibold text-zinc-100">
+          {feature.title}
+        </h3>
+        <p className="text-sm leading-relaxed text-zinc-400">
+          {feature.description}
+        </p>
+      </div>
+    </motion.div>
+  );
+}
+
 export const Features = () => {
   return (
-    <section
-      id="features"
-      className="relative w-full py-24 md:py-32"
-    >
+    <section id="features" className="relative w-full py-24 md:py-32">
       <div className="mx-auto max-w-6xl px-4 md:px-6">
         <motion.div
           className="mb-16 max-w-2xl"
@@ -139,29 +194,9 @@ export const Features = () => {
           whileInView="visible"
           viewport={{ once: true, margin: "-80px" }}
         >
-          {features.map((feature) => {
-            const colors = accentMap[feature.accent];
-            const Icon = feature.icon;
-            return (
-              <motion.div
-                key={feature.title}
-                variants={itemVariants}
-                className={`${feature.span} group relative rounded-2xl border border-zinc-800/60 bg-zinc-900/40 p-6 md:p-8 transition-all duration-300 hover:border-zinc-700/80 hover:bg-zinc-900/70`}
-              >
-                <div
-                  className={`mb-5 inline-flex h-10 w-10 items-center justify-center rounded-xl ${colors.bg} ${colors.border} border`}
-                >
-                  <Icon className={`h-5 w-5 ${colors.text}`} />
-                </div>
-                <h3 className="mb-2 text-lg font-semibold text-zinc-100">
-                  {feature.title}
-                </h3>
-                <p className="text-sm leading-relaxed text-zinc-400">
-                  {feature.description}
-                </p>
-              </motion.div>
-            );
-          })}
+          {features.map((feature) => (
+            <FeatureCard key={feature.title} feature={feature} />
+          ))}
         </motion.div>
       </div>
     </section>

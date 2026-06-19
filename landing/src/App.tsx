@@ -3,6 +3,7 @@ import { Hero } from "./components/sections/Hero";
 import { Features } from "./components/sections/Features";
 import { Commands } from "./components/sections/Commands";
 import { Onboarding } from "./components/sections/Onboarding";
+import { Docs } from "./components/sections/Docs";
 import { Footer } from "./components/sections/Footer";
 import { AuroraBackground } from "./components/sections/AuroraBackground";
 
@@ -16,6 +17,7 @@ function App() {
         <Features />
         <Commands />
         <Onboarding />
+        <Docs />
       </main>
       <Footer />
     </div>
