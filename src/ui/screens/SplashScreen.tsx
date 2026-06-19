@@ -40,7 +40,9 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
   // keypress is ever dropped during a listener teardown window.
   const handleInput = useCallback(
     (_input: string, key: { return: boolean }) => {
-      if (key.return && !firedRef.current) {
+      const isEnter = key.return || _input === '\r' || _input === '\n';
+      
+      if (isEnter && !firedRef.current) {
         firedRef.current = true;
         onComplete();
       }
