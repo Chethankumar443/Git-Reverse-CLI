@@ -13,7 +13,8 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  const staticItems = [{ type: 'header' }, ...items.map(msg => ({ type: 'msg', text: msg }))];
+  type StaticItem = { type: 'header' } | { type: 'msg'; text: string };
+  const staticItems: StaticItem[] = [{ type: 'header' }, ...items.map(msg => ({ type: 'msg' as const, text: msg }))];
 
   return (
     <Box flexDirection="column">

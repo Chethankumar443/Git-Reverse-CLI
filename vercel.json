@@ -1,7 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "outputDirectory": "landing",
-  "buildCommand": "echo 'Static site deployed'",
+  "installCommand": "cd landing && npm install",
+  "buildCommand": "cd landing && npm run build",
+  "outputDirectory": "landing/dist",
   "cleanUrls": true,
   "trailingSlash": false,
   "headers": [
