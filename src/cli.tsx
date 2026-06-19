@@ -15,10 +15,10 @@ import { execSync } from 'node:child_process';
 import meow from 'meow';
 import chalk from 'chalk';
 
-// ── Intercept Upgrade Command ─────────────────────────────────
+// ── Intercept Global Commands ───────────────────────────────────
 
 const args = process.argv.slice(2);
-if (args[0] === 'upgrade') {
+if (args[0] === 'update' || args[0] === 'upgrade') {
   console.clear();
   console.log(chalk.cyan('⠋ Upgrading git-reverse-cli to the latest version...'));
   
@@ -31,6 +31,23 @@ if (args[0] === 'upgrade') {
   } catch (error) {
     console.log(chalk.red('\n✖ Upgrade failed.'));
     console.log('Please manually run: npm install -g git-reverse-cli@latest');
+    process.exit(1);
+  }
+}
+
+if (args[0] === 'uninstall') {
+  console.clear();
+  console.log(chalk.red('⠋ Uninstalling git-reverse-cli...'));
+  
+  try {
+    execSync('npm uninstall -g git-reverse-cli', { 
+      stdio: 'inherit'
+    });
+    console.log(chalk.green('\n✔ Successfully uninstalled.'));
+    process.exit(0);
+  } catch (error) {
+    console.log(chalk.red('\n✖ Uninstall failed.'));
+    console.log('Please manually run: npm uninstall -g git-reverse-cli');
     process.exit(1);
   }
 }

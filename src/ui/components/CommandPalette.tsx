@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────
 //  git-reverse — Command Palette Overlay
-//  Triggered by pressing backslash '\'
+//  Rich floating panel — triggered by pressing \ or /
 // ─────────────────────────────────────────────────────────────
 
 import React from 'react';
@@ -11,7 +11,7 @@ const COMMANDS: CommandEntry[] = [
   {
     name: 'settings',
     aliases: ['\\settings'],
-    description: 'to open settings page for any modification',
+    description: 'Open settings — API key, model, username',
     hint: 'settings',
   },
   {
@@ -22,20 +22,20 @@ const COMMANDS: CommandEntry[] = [
   },
   {
     name: 'compact',
-    aliases: ['\\compact', '\\summarize'],
-    description: 'to summarize the session',
+    aliases: ['\\compact'],
+    description: 'Summarize the current session',
     hint: 'compact',
   },
   {
     name: 'deepdive',
-    aliases: ['\\deepdive', '\\learn'],
-    description: 'for deeply analyzing and giving a very detailed prompt in such a way that user can understand and also the following prompt can be used the same project from scratch according to the user',
+    aliases: ['\\deepdive'],
+    description: 'Detailed deep-dive mode output',
     hint: 'deepdive',
   },
   {
     name: 'resume',
     aliases: ['\\resume <id>'],
-    description: 'Resume a previous session by its ID',
+    description: 'Resume a previous session by ID',
     hint: 'resume',
   },
   {
@@ -47,16 +47,28 @@ const COMMANDS: CommandEntry[] = [
   {
     name: 'clear',
     aliases: ['\\clear'],
-    description: 'Clear the current output buffer',
+    description: 'Clear the output buffer',
     hint: 'clear',
   },
   {
     name: 'quit',
-    aliases: ['\\quit', '\\exit'],
+    aliases: ['\\quit'],
     description: 'Save session and exit',
     hint: 'quit',
   },
 ];
+
+// Icon map per command
+const ICONS: Record<string, string> = {
+  settings: '⚙',
+  update:   '↑',
+  compact:  '◈',
+  deepdive: '⬡',
+  resume:   '↺',
+  sessions: '☰',
+  clear:    '✕',
+  quit:     '⏻',
+};
 
 interface CommandPaletteProps {
   visible: boolean;
@@ -65,48 +77,47 @@ interface CommandPaletteProps {
 export function CommandPalette({ visible }: CommandPaletteProps) {
   if (!visible) return null;
 
-  const COL1 = 24;
-
   return (
     <Box
       flexDirection="column"
-      borderStyle="single"
+      borderStyle="round"
       borderColor="cyan"
-      paddingX={2}
+      paddingX={1}
       paddingY={0}
       marginBottom={1}
       marginLeft={2}
     >
-      <Text color="cyan" dimColor>
-        Commands
-      </Text>
-      <Box marginTop={0}>
-        <Text color="white" dimColor>
-          {'─'.repeat(40)}
-        </Text>
+      {/* Title bar */}
+      <Box flexDirection="row" alignItems="center" marginBottom={0}>
+        <Text color="black" backgroundColor="cyan"> COMMANDS </Text>
+        <Text color="cyan" dimColor> ─────────────────────────────────────</Text>
       </Box>
+
+      {/* Command rows */}
       {COMMANDS.map((cmd) => (
-        <Box key={cmd.name} flexDirection="row">
-          <Box width={COL1}>
-            <Text color="cyan">
-              {cmd.aliases.join(', ')}
-            </Text>
+        <Box key={cmd.name} flexDirection="row" marginTop={0}>
+          {/* Icon */}
+          <Box width={3}>
+            <Text color="cyan" dimColor>{ICONS[cmd.name] ?? '›'}</Text>
           </Box>
-          <Box>
-            <Text color="white" dimColor>
-              {cmd.description}
-            </Text>
+          {/* Shortcut tag */}
+          <Box width={20}>
+            <Text color="cyan" bold>{cmd.aliases[0]}</Text>
           </Box>
+          {/* Description */}
+          <Text color="white" dimColor>{cmd.description}</Text>
         </Box>
       ))}
-      <Box marginTop={0}>
-        <Text color="white" dimColor>
-          {'─'.repeat(40)}
-        </Text>
+
+      {/* Footer */}
+      <Box marginTop={0} flexDirection="row" alignItems="center">
+        <Text color="cyan" dimColor>──────────────────────────────────────────</Text>
       </Box>
-      <Text color="white" dimColor>
-        esc  close palette
-      </Text>
+      <Box flexDirection="row" gap={2}>
+        <Text color="white" dimColor>  Press </Text>
+        <Text color="black" backgroundColor="white"> Esc </Text>
+        <Text color="white" dimColor> to close</Text>
+      </Box>
     </Box>
   );
 }

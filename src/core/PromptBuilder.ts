@@ -1,10 +1,14 @@
 // ─────────────────────────────────────────────────────────────
 //  git-reverse — Prompt Builder
-//  Constructs structured system + user prompts from repo analysis
+//  Master Prompt Extraction Pipeline
+//  Synthesizes repo skeleton → structured architectural blueprint
 // ─────────────────────────────────────────────────────────────
 
 import type { RepoAnalysis, Message, AnalysisMode } from '../types/index.js';
 import { encode } from 'gpt-tokenizer';
+
+// Content roles that are safe to read (architectural signals only — no raw source)
+const CONTENT_ROLES_ALLOWED = new Set(['readme', 'package', 'config', 'schema']);
 
 export class PromptBuilder {
   // ── Token Estimation ──────────────────────────────────────
@@ -13,39 +17,102 @@ export class PromptBuilder {
     const text = messages.map((m) => m.content).join('\n');
     return encode(text).length;
   }
-  // ── System Prompt ─────────────────────────────────────────
+
+  // ── Master Prompt System Instruction ─────────────────────
+  //  The "secret sauce" — strict hidden instruction that transforms
+  //  the LLM from a chatbot into a pure architecture synthesizer.
 
   static buildSystemPrompt(): Message {
     return {
       role: 'system',
-      content: `You are git-reverse, an expert software architect and reverse-engineering analyst.
+      content: `You are git-reverse, an expert Staff Engineer and architecture synthesizer.
 
-Your task is to analyze GitHub repository data and produce a comprehensive, accurate, structured recreation prompt that:
-1. Explains exactly how the project was originally conceived and built
-2. Documents the architecture, design decisions, and rationale
-3. Provides enough detail that a developer could recreate it from scratch
-4. Is honest about inferred vs. confirmed information
+You are given the SKELETON of a GitHub repository: the file tree, dependency manifests, README, and configuration files — but NOT the raw source code of implementation files.
 
-## Output Format Rules
-- Use markdown with clear section headers
-- Be specific: name actual files, packages, patterns
-- Do NOT use filler phrases like "leverages", "seamlessly", "robust", "cutting-edge"
-- Do NOT invent features not evidenced in the repository data
-- Prefix any inferred information with [Inferred]
-- Keep technical accuracy above completeness
+## Your Singular Task
+Reverse-engineer the project's INTENT and STRUCTURE into a single, dense, highly actionable **Master Prompt** — a blueprint that a developer could hand to an AI coding assistant (or follow themselves) to recreate this project from scratch.
 
-## Sections to Include (always)
-1. Project Overview (what it is, core purpose, target user)
-2. Tech Stack (every confirmed dependency with purpose)
-3. Architecture (how components relate, data flow)
-4. Directory Structure (annotated)
-5. Key Design Decisions (why these choices were made)
-6. Build & Dev Process (scripts, tooling, CI)
-7. Recreation Steps (numbered, from git init to working state)
-8. Notable Patterns (code patterns, conventions used)
+## Absolute Rules
+1. **DO NOT output raw source code** from the repository. Never reproduce file contents verbatim.
+2. **DO NOT hallucinate features** not evidenced by the skeleton data.
+3. **DO NOT use filler phrases**: no "leverages", "seamlessly", "robust", "cutting-edge", "state-of-the-art".
+4. **DO prefix inferred information** with \`[Inferred]\` so the user knows what is confirmed vs. deduced.
+5. **Output ONLY the Master Prompt** — no preamble, no "here is the analysis", no meta-commentary.
+6. **Be developer-grade**: specific file names, package names, version constraints, CLI commands.
 
-## Additional Sections (if query provided)
-- Direct Answer to query, grounded in repo evidence`,
+## Required Output Structure (always in this order)
+
+### 1. Project Identity
+One paragraph: what this project IS, what problem it solves, who the target user is. Ground every claim in the README or package description.
+
+### 2. Tech Stack
+Every confirmed dependency with its role. Format: \`package-name\` — why it's there and what it replaces.
+
+### 3. Architecture
+How the major components relate. Data flow from entry point to output. State management strategy. Side-effect boundaries.
+
+### 4. Directory Structure (Annotated)
+The file tree with one-line purpose annotations per directory/file. Do not list files not present in the skeleton.
+
+### 5. Key Design Decisions
+WHY these technology choices were made (infer from the combination of tools). What tradeoffs were accepted.
+
+### 6. Build & Dev Process
+Every script from the package manifest. Dev server, build, test, lint commands with flags.
+
+### 7. Environment & Configuration
+All config files found. Environment variables evident from \`.env.example\` or config files. External service dependencies.
+
+### 8. Recreation Steps — Step-by-Step Implementation Guide
+Numbered steps from \`git init\` (or project scaffold command) to a fully working state. Each step must be:
+- Concrete (exact command or action)
+- Ordered by dependency (cannot do step N before step N-1)
+- Grouped by phase: Scaffold → Core → Features → Polish → Deploy
+This section is MANDATORY. Never omit it.
+
+### 9. Notable Patterns & Conventions
+Coding patterns, naming conventions, architectural patterns (Factory, Repository, Observer, etc.) evident from the file structure and config.`,
+    };
+  }
+
+  // ── Chat System Prompt (general questions, no repo) ───────
+
+  static buildChatSystemPrompt(mode?: AnalysisMode): Message {
+    let content = `You are git-reverse, an expert Staff Engineer and architecture synthesizer.
+When the user asks to build, plan, or design a system/application, reverse-engineer the requirements and synthesize the intent and structure into a single, dense, highly detailed Master Prompt (acting as a blueprint for recreation).
+Your response should follow this structured blueprint format:
+1. Project Identity (spec)
+2. Proposed Tech Stack
+3. Architecture (data flow, state)
+4. Designed Directory Structure (skeleton tree)
+5. Key Design Decisions
+6. Build & Dev Process (scripts/commands)
+7. Environment & Configuration
+8. Recreation Steps (step-by-step implementation guide)
+9. Notable Patterns & Conventions
+
+For general technical questions or conversation, you MUST structure your answer in a highly formal, professional, and organized format. Use Markdown headings, bullet points, and code blocks.
+NEVER provide a casual, unstructured, or single-line response. Always break your answer down into logical sections. Avoid filler words. Always be direct, specific, and developer-grade.`;
+
+    if (mode === 'deep') {
+      content += `\n\n## Deep Dive Mode — Extended Sections Required
+When synthesizing a system design, you MUST also include:
+### 10. Design Pattern Catalogue
+### 11. Learning Path
+### 12. Pitfalls & Non-obvious Issues
+### 13. Scaling Considerations
+### 14. Time-to-Build Estimate`;
+    } else if (mode === 'compact') {
+      content += `\n\n## Compact Mode — Strict Constraints
+Produce a CONDENSED Master Prompt. Hard limits:
+- Total output: 600 words maximum
+- Use bullet points throughout — no long paragraphs
+- Skip unnecessary background explanations`;
+    }
+
+    return {
+      role: 'system',
+      content,
     };
   }
 
@@ -54,20 +121,30 @@ Your task is to analyze GitHub repository data and produce a comprehensive, accu
   static buildAnalysisPrompt(analysis: RepoAnalysis, userQuery?: string): Message {
     const { meta, tree, keyFiles, stack, dependencies } = analysis;
 
-    const treeStr = buildTreeString(tree, 3);
+    const treeStr = buildTreeString(tree, 4);
     const depsStr = formatDeps(dependencies);
-    const keyFilesStr = keyFiles
-      .map((f) => `### ${f.path} [${f.role}]\n\`\`\`\n${f.content.slice(0, 3000)}\n\`\`\``)
+
+    // Only include content for safe architectural-signal roles (no raw source)
+    const safeFiles = keyFiles.filter((f) => CONTENT_ROLES_ALLOWED.has(f.role));
+    const keyFilesStr = safeFiles
+      .map((f) => `### ${f.path} [${f.role}]\n\`\`\`\n${f.content.slice(0, 4000)}\n\`\`\``)
       .join('\n\n');
 
+    // List entrypoints by name only — confirm existence without dumping source
     const entryPoints = keyFiles.filter((f) => f.role === 'entrypoint').map((f) => f.path);
-    const configFiles = keyFiles.filter((f) => f.role === 'config').map((f) => f.path);
 
     const isLocal = meta.owner === 'local';
     const repoHeader = isLocal ? `Local Project: ${meta.repo}` : `${meta.owner}/${meta.repo}`;
 
+    // Query pivot: when present, reframe the entire blueprint around the user's goal
     const querySection = userQuery?.trim()
-      ? `\n\n## User Query\n${userQuery.trim()}\n\nAfter your full analysis, provide a direct, evidence-based answer to this query in a section titled "## Direct Answer".`
+      ? `\n\n## Synthesis Target (User Query)
+The user wants: **"${userQuery.trim()}"**
+
+After generating the standard 9-section Master Prompt, add a final section:
+
+### 10. Query-Pivoted Blueprint
+Directly address the user's query using evidence from the repository skeleton. If the query asks to convert, adapt, extend, or compare this project, describe exactly how the Master Prompt sections above would change to fulfil that goal. Be specific about what stays, what changes, and what new dependencies or patterns would be needed.`
       : '';
 
     return {
@@ -75,38 +152,35 @@ Your task is to analyze GitHub repository data and produce a comprehensive, accu
       content: `# Repository: ${repoHeader}
 
 ## Metadata
-- Description: ${meta.description || 'No description'}
+- Description: ${meta.description || 'No description provided'}
 - Primary Language: ${meta.language}
 ${isLocal ? '' : `- Stars: ${meta.stars.toLocaleString()} | Forks: ${(meta.forks ?? 0).toLocaleString()}
 - Topics: ${meta.topics.join(', ') || 'none'}
 - Created: ${meta.createdAt?.split('T')[0]} | Last Updated: ${meta.updatedAt?.split('T')[0]}
-- Repo Size: ${meta.size} KB`}
+- Repository Size: ${meta.size} KB`}
 - Default Branch: ${meta.defaultBranch}
 
 ## Detected Tech Stack
-${stack.map((t) => `- ${t}`).join('\n') || '- Unknown'}
+${stack.map((t) => `- ${t}`).join('\n') || '- Unknown (no recognized patterns found)'}
 
-## Entry Points
+## Entry Points (structure confirmed — no source content)
 ${entryPoints.length ? entryPoints.map((e) => `- \`${e}\``).join('\n') : '- Not detected'}
-
-## Config Files
-${configFiles.length ? configFiles.map((c) => `- \`${c}\``).join('\n') : '- None found'}
 
 ## Dependencies
 ${depsStr}
 
-## Directory Structure (filtered)
+## Directory Structure (full skeleton)
 \`\`\`
 ${treeStr}
 \`\`\`
 
-## Key Files Content
-${keyFilesStr}
+## Architectural Signal Files (manifests, configs, README only — no implementation source)
+${keyFilesStr || '(no manifest or config files found)'}
 ${querySection}
 
 ---
 
-Produce the full structured recreation prompt now. Be precise, developer-grade, and actionable.`,
+Generate the complete Master Prompt now. Follow the 9-section structure exactly. Do not add preamble. Start directly with "### 1. Project Identity".`,
     };
   }
 
@@ -118,19 +192,65 @@ Produce the full structured recreation prompt now. Be precise, developer-grade, 
       ...base,
       content:
         base.content +
-        `\n\n## Deep Dive Mode
-You are in DEEP DIVE mode. In addition to the standard analysis:
-- Explain every architectural decision in depth with rationale
-- Document all design patterns identified (Factory, Observer, Repository, etc.)
-- Provide a learning path: what concepts must be understood to build this
-- Add a "Pitfalls & Non-obvious Issues" section
-- Add a "Scaling Considerations" section
-- Add estimated time to recreate broken down by phase
-- Make this suitable as a comprehensive technical document, not just a reference`,
+        `\n\n## Deep Dive Mode — Extended Sections Required
+In addition to the standard 9 sections, you MUST also include:
+
+### 10. Design Pattern Catalogue
+Every architectural and code design pattern evident from the skeleton (Factory, Singleton, Repository, Observer, Command, Adapter, etc.) — where it appears and why.
+
+### 11. Learning Path
+What prerequisite concepts must a developer understand before building this? Order from foundational to advanced.
+
+### 12. Pitfalls & Non-obvious Issues
+What will trip up developers trying to recreate this? Common mistakes given this tech stack. Non-obvious dependencies or ordering constraints.
+
+### 13. Scaling Considerations
+At what load/size does this architecture break? What would need to change to scale 10x or 100x?
+
+### 14. Time-to-Build Estimate
+Realistic hour estimates broken down by phase (Scaffold, Core Features, Polish, Testing, Deploy). Assume a senior developer working alone.`,
     };
   }
 
-  // ── Compact / Summarize Prompt ────────────────────────────
+  // ── Compact Prompt ────────────────────────────────────────
+
+  static buildCompactPrompt(analysis: RepoAnalysis, userQuery?: string): Message {
+    const base = PromptBuilder.buildAnalysisPrompt(analysis, userQuery);
+    return {
+      ...base,
+      content:
+        base.content +
+        `\n\n## Compact Mode — Strict Constraints
+Produce a CONDENSED Master Prompt. Hard limits:
+- Total output: 600 words maximum
+- Use bullet points throughout — no long paragraphs
+- Sections 1-6 combined into a single "Quick Spec" block
+- Section 8 (Recreation Steps) must still be present but limited to 8 steps maximum
+- Skip sections 7, 9 unless they contain critical non-obvious information
+- If query present: answer it in 3 sentences max`,
+    };
+  }
+
+  // ── Explore / Explain Prompt ──────────────────────────────
+
+  static buildExplorePrompt(analysis: RepoAnalysis, userQuery?: string): Message {
+    const base = PromptBuilder.buildAnalysisPrompt(analysis, userQuery);
+    return {
+      ...base,
+      content:
+        base.content +
+        `\n\n## Explore Mode — Educational Framing
+Instead of a "how to rebuild" blueprint, produce a "how it works" walkthrough:
+- Write in second person ("When you run \`npm run dev\`, here is what happens...")
+- Explain the data flow step by step, from user action to system response
+- For each major directory, explain what type of code lives there and why
+- Highlight the most interesting or non-obvious architectural choices
+- If query present: answer it with depth — explain the WHY, not just the WHAT
+- Assume the reader is a mid-level developer who wants to understand, not just copy`,
+    };
+  }
+
+  // ── Summarize Session Prompt ──────────────────────────────
 
   static buildSummarizePrompt(messages: Message[]): Message {
     const sessionText = messages
@@ -140,17 +260,16 @@ You are in DEEP DIVE mode. In addition to the standard analysis:
 
     return {
       role: 'user',
-      content: `Summarize this git-reverse session concisely. Include:
-1. Repository analyzed (owner/repo, stack, purpose)
-2. Key findings from the analysis
-3. Questions or queries the user had and how they were answered
-4. Any next steps or action items mentioned
+      content: `Summarize this git-reverse session. Output a clean, scannable Markdown document with:
+1. **Repository** — what was analyzed (name, stack, purpose)
+2. **Master Prompt Summary** — 3-5 bullet points of key architectural findings
+3. **User Queries** — each question the user asked and the key answer
+4. **Action Items** — concrete next steps the user should take
 
 Session transcript:
 ---
 ${sessionText}
----
-Produce a clean, scannable summary.`,
+---`,
     };
   }
 
@@ -166,31 +285,11 @@ Produce a clean, scannable summary.`,
     switch (mode) {
       case 'deep':
         return [system, PromptBuilder.buildDeepDivePrompt(analysis, userQuery)];
-      case 'compact': {
-        const base = PromptBuilder.buildAnalysisPrompt(analysis, userQuery);
-        return [
-          system,
-          {
-            ...base,
-            content:
-              base.content +
-              `\n\n## Compact Mode\nYou are in COMPACT mode. Summarize this repository in the shortest, most concise way possible. Bullet points only. Skip lengthy architecture explanations and focus only on the absolute core structure, main tech stack, and primary purpose. If there is a query, answer it as briefly as possible.`
-          }
-        ];
-      }
-      case 'explore': {
-        const base = PromptBuilder.buildAnalysisPrompt(analysis, userQuery);
-        return [
-          system,
-          {
-            ...base,
-            content:
-              base.content +
-              `\n\n## Explore Mode\nYou are in EXPLORE mode. Focus on explaining how the repository works, explaining its design, file structures, and code flow. Explain it clearly like a senior developer tutoring a junior developer. If there is a query, answer it in detail and give educational code explanations.`
-          }
-        ];
-      }
-      default:
+      case 'compact':
+        return [system, PromptBuilder.buildCompactPrompt(analysis, userQuery)];
+      case 'explore':
+        return [system, PromptBuilder.buildExplorePrompt(analysis, userQuery)];
+      default: // 'standard' | 'query'
         return [system, PromptBuilder.buildAnalysisPrompt(analysis, userQuery)];
     }
   }
@@ -203,21 +302,11 @@ function buildTreeString(
   maxDepth: number,
 ): string {
   const lines: string[] = [];
-  const dirs = new Set<string>();
 
-  // Collect all dirs
-  for (const f of files) {
-    const parts = f.path.split('/');
-    for (let i = 1; i < parts.length; i++) {
-      dirs.add(parts.slice(0, i).join('/'));
-    }
-  }
-
-  // Sort: dirs first, then files
   const sorted = [...files].sort((a, b) => {
+    if (a.type !== b.type) return a.type === 'dir' ? -1 : 1;
     const aDepth = a.path.split('/').length;
     const bDepth = b.path.split('/').length;
-    if (a.type !== b.type) return a.type === 'dir' ? -1 : 1;
     return aDepth - bDepth || a.path.localeCompare(b.path);
   });
 
@@ -230,14 +319,17 @@ function buildTreeString(
     const indent = '  '.repeat(depth);
     const name = f.path.split('/').pop() ?? f.path;
     const suffix = f.type === 'dir' ? '/' : '';
-    lines.push(`${indent}${name}${suffix}`);
+    const size = f.size && f.type === 'file' && f.size > 0
+      ? `  (${(f.size / 1024).toFixed(1)}KB)`
+      : '';
+    lines.push(`${indent}${name}${suffix}${size}`);
   }
 
-  return lines.slice(0, 120).join('\n');
+  return lines.slice(0, 150).join('\n');
 }
 
 function formatDeps(deps: RepoAnalysis['dependencies']): string {
   const entries = Object.entries(deps);
   if (!entries.length) return '  No package manifest found';
-  return entries.slice(0, 40).map(([name, version]) => `  ${name}: ${version}`).join('\n');
+  return entries.slice(0, 50).map(([name, version]) => `  ${name}: ${version}`).join('\n');
 }

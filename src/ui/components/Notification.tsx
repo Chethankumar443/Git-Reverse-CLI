@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────
 //  git-reverse — Notification Banner
-//  Shows new free model alerts
+//  Styled new free model alert card
 // ─────────────────────────────────────────────────────────────
 
 import React from 'react';
@@ -10,7 +10,6 @@ import { formatModelId, formatModelProvider } from '../../utils/format.js';
 
 interface NotificationProps {
   newModels: OpenRouterModel[];
-  onDismiss?: () => void;
 }
 
 export function Notification({ newModels }: NotificationProps) {
@@ -19,30 +18,52 @@ export function Notification({ newModels }: NotificationProps) {
   return (
     <Box
       flexDirection="column"
-      borderStyle="single"
+      borderStyle="bold"
       borderColor="green"
       paddingX={2}
-      paddingY={0}
+      paddingY={1}
       marginBottom={1}
       marginLeft={2}
+      width={60}
     >
-      <Text color="green">
-        ↑ {newModels.length} new free model{newModels.length > 1 ? 's' : ''} on OpenRouter
-      </Text>
+      {/* Title bar */}
+      <Box flexDirection="row" alignItems="center" marginBottom={1}>
+        <Text color="black" backgroundColor="green" bold>  ↑ NEW MODELS  </Text>
+        <Box marginLeft={1}>
+          <Text color="green"> {newModels.length} free model{newModels.length > 1 ? 's' : ''} on OpenRouter</Text>
+        </Box>
+      </Box>
+
+      {/* Model rows */}
       {newModels.slice(0, 3).map((m) => (
-        <Text key={m.id} color="white" dimColor>
-          {'  '}
-          {formatModelProvider(m.id)}/{formatModelId(m.id)}
-          {'  '}
-          <Text color="white" dimColor>
-            {m.context_length ? `${(m.context_length / 1000).toFixed(0)}k ctx` : ''}
-          </Text>
-        </Text>
+        <Box key={m.id} flexDirection="row" alignItems="center" paddingLeft={1}>
+          <Box width={3}>
+            <Text color="green" bold>›</Text>
+          </Box>
+          <Box width={15}>
+            <Text color="white" dimColor>{formatModelProvider(m.id)}</Text>
+          </Box>
+          <Box width={2}>
+            <Text color="white" dimColor>/</Text>
+          </Box>
+          <Box flexGrow={1}>
+            <Text color="cyan">{formatModelId(m.id)}</Text>
+          </Box>
+          {m.context_length ? (
+            <Box>
+              <Text color="white" dimColor>{(m.context_length / 1000).toFixed(0)}k ctx</Text>
+            </Box>
+          ) : null}
+        </Box>
       ))}
+
+      {/* Overflow hint */}
       {newModels.length > 3 && (
-        <Text color="white" dimColor>
-          {'  '}+{newModels.length - 3} more · run \settings to view all
-        </Text>
+        <Box flexDirection="row" alignItems="center" marginTop={1} paddingLeft={1}>
+          <Text color="white" dimColor>+{newModels.length - 3} more  ·  type </Text>
+          <Text color="cyan">\\settings</Text>
+          <Text color="white" dimColor> to view all</Text>
+        </Box>
       )}
     </Box>
   );

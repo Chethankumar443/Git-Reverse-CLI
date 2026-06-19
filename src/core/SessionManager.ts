@@ -143,23 +143,5 @@ export class SessionManager {
     return `#${id}`;
   }
 
-  // ── SIGINT handler ────────────────────────────────────────
-  // Registers a handler that saves the session on Ctrl+C
-  // and calls the provided onExit callback with the session ID
-
-  registerSigintHandler(onExit: (sessionId: string | null) => void): void {
-    this.sigintHandler = () => {
-      const saved = this.save();
-      onExit(saved?.id ?? null);
-      process.exit(0);
-    };
-    process.on('SIGINT', this.sigintHandler);
-  }
-
-  removeSigintHandler(): void {
-    if (this.sigintHandler) {
-      process.removeListener('SIGINT', this.sigintHandler);
-      this.sigintHandler = null;
-    }
-  }
+  // SIGINT handler removed, now handled explicitly by React components
 }

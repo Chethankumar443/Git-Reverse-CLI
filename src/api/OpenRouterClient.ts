@@ -45,11 +45,15 @@ export class OpenRouterClient {
       return { valid: false, error: 'Invalid API key response' };
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
-        if (err.response?.status === 401) return { valid: false, error: 'Invalid API key — check your key and try again.' };
-        if (err.response?.status === 429) return { valid: false, error: 'Rate limited — wait a moment and try again.' };
+        if (err.response?.status === 401) {
+          return { valid: false, error: 'E2002: Invalid or revoked API key — check your key and try again.' };
+        }
+        if (err.response?.status === 429) {
+          return { valid: false, error: 'E2001: Rate limited — wait a moment and try again.' };
+        }
         return { valid: false, error: err.message };
       }
-      return { valid: false, error: 'Network error — check your connection.' };
+      return { valid: false, error: 'E4001: Network error — check your connection.' };
     }
   }
 

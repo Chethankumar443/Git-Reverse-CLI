@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://git-reverse.dev/sitemap.xml
+Sitemap: https://git-reverse-cli.vercel.app/sitemap.xml

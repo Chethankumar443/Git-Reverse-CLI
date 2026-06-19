@@ -61,19 +61,19 @@ describe('PromptBuilder', () => {
     it('includes user query in Direct Answer section when provided', () => {
       const msg = PromptBuilder.buildAnalysisPrompt(mockAnalysis, 'How does the spinner work?');
       expect(msg.content).toContain('How does the spinner work?');
-      expect(msg.content).toContain('Direct Answer');
+      expect(msg.content).toContain('Query-Pivoted Blueprint');
     });
 
     it('does not include Direct Answer section when no query', () => {
       const msg = PromptBuilder.buildAnalysisPrompt(mockAnalysis);
-      expect(msg.content).not.toContain('Direct Answer');
+      expect(msg.content).not.toContain('Query-Pivoted Blueprint');
     });
   });
 
   describe('buildDeepDivePrompt', () => {
     it('includes deep dive instructions', () => {
       const msg = PromptBuilder.buildDeepDivePrompt(mockAnalysis);
-      expect(msg.content).toContain('DEEP DIVE');
+      expect(msg.content).toContain('Deep Dive Mode');
       expect(msg.content).toContain('Pitfalls');
     });
   });
@@ -88,7 +88,7 @@ describe('PromptBuilder', () => {
 
     it('returns deep dive content for deep mode', () => {
       const msgs = PromptBuilder.buildMessages(mockAnalysis, 'deep');
-      expect(msgs[1]!.content).toContain('DEEP DIVE');
+      expect(msgs[1]!.content).toContain('Deep Dive Mode');
     });
   });
 });

@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────
 //  git-reverse — Header Component
-//  ASCII logo + username greeting + active model badge
+//  ASCII logo + status strip + greeting
 // ─────────────────────────────────────────────────────────────
 
 import React from 'react';
@@ -32,48 +32,41 @@ export function Header({ username, model, version = '1.0.0', newModelCount = 0 }
         </Text>
       ))}
 
-      <Box marginTop={1} flexDirection="row" gap={2}>
-        <Text color="white" dimColor>
-          {'  '}v{version}
-        </Text>
+      {/* ── Status strip ─────────────────────────────────────── */}
+      <Box marginTop={1} flexDirection="row" alignItems="center">
+        {/* Version pill */}
+        <Text color="black" backgroundColor="cyan"> v{version} </Text>
+
+        {/* Model tag */}
         {model && (
-          <Box>
-            <Text color="white" dimColor>
-              {'·'}
-            </Text>
-            <Text color="yellow" dimColor>
-              {' '}
-              {formatModelProvider(model)}
-            </Text>
-            <Text color="white" dimColor>
-              /
-            </Text>
-            <Text color="yellow">{formatModelId(model)}</Text>
-          </Box>
+          <>
+            <Text color="cyan" dimColor>  ·  </Text>
+            <Text color="white" dimColor>{formatModelProvider(model)}/</Text>
+            <Text color="cyan" bold>{formatModelId(model)}</Text>
+          </>
         )}
+
+        {/* New model alert tag */}
         {newModelCount > 0 && (
-          <Box>
-            <Text color="white" dimColor>
-              {'·'}
-            </Text>
-            <Text color="green"> {newModelCount} new model{newModelCount > 1 ? 's' : ''} available</Text>
-          </Box>
+          <>
+            <Text color="cyan" dimColor>  ·  </Text>
+            <Text color="black" backgroundColor="green"> ↑ {newModelCount} new model{newModelCount > 1 ? 's' : ''} </Text>
+          </>
         )}
       </Box>
 
+      {/* ── Greeting ─────────────────────────────────────────── */}
       {username && (
         <Box marginTop={0} paddingLeft={2}>
-          <Text color="white" dimColor>
-            Hello,{' '}
-          </Text>
-          <Text color="white">{username}.</Text>
+          <Text color="white" dimColor>Hello, </Text>
+          <Text color="white" bold>{username}</Text>
+          <Text color="cyan"> ◂</Text>
         </Box>
       )}
 
+      {/* ── Divider ──────────────────────────────────────────── */}
       <Box marginTop={1}>
-        <Text color="white" dimColor>
-          {'─'.repeat(79)}
-        </Text>
+        <Text color="cyan" dimColor>{'╾' + '─'.repeat(77) + '╼'}</Text>
       </Box>
     </Box>
   );

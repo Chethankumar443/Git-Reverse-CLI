@@ -2,11 +2,12 @@
 //  git-reverse — Dashboard Screen
 // ─────────────────────────────────────────────────────────────
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { Box, Text, useInput } from 'ink';
 import TextInput from 'ink-text-input';
 import { CommandPalette } from '../components/CommandPalette.js';
 import { Notification } from '../components/Notification.js';
+import { SessionBanner } from '../components/SessionBanner.js';
 import type { OpenRouterModel, AnalysisMode } from '../../types/index.js';
 import { parseGitHubInput, isGitHubUrl, isLocalPath } from '../../utils/github.js';
 import { formatModelId, timeAgo } from '../../utils/format.js';
@@ -17,8 +18,11 @@ interface DashboardProps {
   username: string;
   model: string;
   newModels: OpenRouterModel[];
+  sessionId?: string | null;
+  sessionRepoUrl?: string | null;
   onAnalyze: (repoUrl: string, query: string, mode: AnalysisMode) => void;
   onCommand: (command: string) => void;
+  onSessionBannerDismiss?: () => void;
 }
 
 function parseLocalInput(input: string): { path: string; query: string } {
@@ -31,7 +35,7 @@ function parseLocalInput(input: string): { path: string; query: string } {
   return { path: trimmed, query: '' };
 }
 
-export function Dashboard({ username, model, newModels, onAnalyze, onCommand }: DashboardProps) {
+export function Dashboard({ username, model, newModels, sessionId, sessionRepoUrl, onAnalyze, onCommand, onSessionBannerDismiss }: DashboardProps) {
   const [inputValue, setInputValue] = useState('');
   const [error, setError] = useState('');
   const [showPalette, setShowPalette] = useState(false);
@@ -40,23 +44,53 @@ export function Dashboard({ username, model, newModels, onAnalyze, onCommand }: 
 
   const recentSessions = SessionManager.listSessions().slice(0, 3);
 
-  useInput((input, key) => {
-    if (key.escape && showPalette) {
+  // ── Stable refs for the useInput callback ──────────────────
+  // Prevents the useInput effect from re-registering on every state change,
+  // which would cycle setRawMode(false)/setRawMode(true) and drop keystrokes on Windows.
+  const showPaletteRef = useRef(showPalette);
+  showPaletteRef.current = showPalette;
+  const sessionIdRef = useRef(sessionId);
+  sessionIdRef.current = sessionId;
+  const inputValueRef = useRef(inputValue);
+  inputValueRef.current = inputValue;
+  const tuiModeRef = useRef(tuiMode);
+  tuiModeRef.current = tuiMode;
+  const onSessionBannerDismissRef = useRef(onSessionBannerDismiss);
+  onSessionBannerDismissRef.current = onSessionBannerDismiss;
+
+  // Stable callback — never changes identity, so useInput effect never re-runs.
+  const stableInputHandler = useCallback((input: string, key: { escape: boolean; tab: boolean; return: boolean; }) => {
+    if (key.escape && showPaletteRef.current) {
       setShowPalette(false);
       return;
     }
-    if ((input === '\\' || input === '/') && !showPalette) {
-      setShowPalette(true);
+    if (key.escape && sessionIdRef.current) {
+      onSessionBannerDismissRef.current?.();
       return;
     }
-    if (key.tab) {
-      setTuiMode(tuiMode === 'reverse' ? 'explore' : 'reverse');
+    // Only intercept \ and Tab when the text input is empty.
+    if (inputValueRef.current === '') {
+      if ((input === '\\' || input === '/') && !showPaletteRef.current) {
+        if (sessionIdRef.current) onSessionBannerDismissRef.current?.();
+        setShowPalette(true);
+        setInputValue(input);
+        return;
+      }
+      if (key.tab) {
+        setTuiMode(prev => prev === 'reverse' ? 'explore' : 'reverse');
+        return;
+      }
     }
-  });
+  }, []);
+
+  useInput(stableInputHandler);
 
   const handleSubmit = (val: string) => {
     const trimmed = val.trim();
     if (!trimmed) return;
+
+    // Dismiss session banner on new action
+    if (sessionId) onSessionBannerDismiss?.();
 
     // Handle commands
     if (trimmed.startsWith('\\') || trimmed.startsWith('/')) {
@@ -80,9 +114,9 @@ export function Dashboard({ username, model, newModels, onAnalyze, onCommand }: 
       return;
     }
 
-    // Chat fallback: If not a URL or local path, treat as general chat session
+    // Chat fallback: not a URL or local path — treat as general chat session
     setError('');
-    onAnalyze('chat', trimmed, 'explore');
+    onAnalyze('chat', trimmed, mode);
   };
 
   const handleCommand = (cmd: string) => {
@@ -131,112 +165,140 @@ export function Dashboard({ username, model, newModels, onAnalyze, onCommand }: 
     setError(`Unknown command: ${cmd}. Press \\ to see all commands.`);
   };
 
-  const detectMode = (query: string): AnalysisMode => {
-    if (mode === 'deep') return 'deep';
-    const lower = query.toLowerCase();
-    if (/deep.?dive|in.?depth|detailed|understand|learn|explain/.test(lower)) return 'deep';
-    return 'standard';
+
+  const handleBannerSubmit = () => {
+    onSessionBannerDismiss?.();
+    setInputValue('');
   };
+
+  // Mode label and color for display
+  const modeLabel = tuiMode === 'reverse' ? 'REVERSE' : 'EXPLORE';
+  const modeBg    = tuiMode === 'reverse' ? 'cyan' : 'yellow';
 
   return (
     <Box flexDirection="column" paddingLeft={2}>
       {newModels.length > 0 && <Notification newModels={newModels} />}
 
+      {sessionId && (
+        <SessionBanner sessionId={sessionId} repoUrl={sessionRepoUrl ?? undefined} />
+      )}
+
       <CommandPalette visible={showPalette} />
 
-      {mode === 'deep' && (
-        <Box marginBottom={1}>
-          <Text color="yellow">  ◈ Deep-dive mode active</Text>
-          <Text color="white" dimColor>  — detailed educational output</Text>
+      {/* ── Mode status badges ──────────────────── */}
+      {(mode === 'deep' || mode === 'compact') && (
+        <Box marginBottom={1} flexDirection="row" alignItems="center">
+          <Text color="black"
+                backgroundColor={mode === 'deep' ? 'yellow' : 'green'}>
+            {' '}{mode === 'deep' ? '⬡ DEEP-DIVE' : '◈ COMPACT'}{' '}
+          </Text>
+          <Text color="white" dimColor>
+            {mode === 'deep'
+              ? '  14-section analysis with pitfalls, learning path, time estimate'
+              : '  600-word condensed blueprint with quick-start steps'}
+          </Text>
         </Box>
       )}
 
-      {mode === 'compact' && (
-        <Box marginBottom={1}>
-          <Text color="green">  ◈ Compact mode active</Text>
-          <Text color="white" dimColor>  — concise session summary</Text>
-        </Box>
-      )}
-
-      <Box marginBottom={1}>
+      {/* ── Input prompt ───────────────────────────────────── */}
+      <Box marginBottom={0}>
         <Text color="white" dimColor>
           {'  '}Paste a GitHub URL, local path, or ask a question.
         </Text>
       </Box>
 
-      <Box flexDirection="column">
-        <Box>
-          <Text color="cyan" dimColor>
-            {'  › '}
+      {/* ── Bordered input panel ───────────────────────────── */}
+      <Box
+        flexDirection="column"
+        borderStyle="round"
+        borderColor={error ? 'red' : 'cyan'}
+        paddingX={1}
+        marginLeft={0}
+        marginTop={0}
+      >
+        {/* Mode tag inside border */}
+        <Box flexDirection="row" alignItems="center" marginBottom={0}>
+          <Text color="black" backgroundColor={modeBg}> {modeLabel} </Text>
+          <Text color="cyan" dimColor>  </Text>
+          <Text color="white" dimColor>
+            {tuiMode === 'reverse'
+              ? 'architecture synthesizer — outputs Master Prompt blueprint'
+              : 'codebase walkthrough — explains how it works'}
           </Text>
+        </Box>
+
+        {/* Text input row */}
+        <Box flexDirection="row" alignItems="center">
+          <Text color="cyan" bold>{'› '}</Text>
           <TextInput
             value={inputValue}
             onChange={(v) => {
               setInputValue(v);
               setError('');
+              if (sessionId && v.length > 0) onSessionBannerDismiss?.();
             }}
             onSubmit={handleSubmit}
             placeholder={
               tuiMode === 'reverse'
-                ? "https://github.com/owner/repo or local path [rebuild prompt]"
-                : "Ask a general question or paste a repo to explore"
+                ? 'github.com/owner/repo  — or  ./local-path  — or add a query after the URL'
+                : 'Ask anything about architecture, or paste a repo URL to explore'
             }
           />
         </Box>
 
-        {/* Locked status row: always occupies exactly 1 line to prevent layout shifting */}
-        <Box height={1} marginTop={1}>
+        {/* Error / status row — fixed height */}
+        <Box height={1}>
           {error ? (
-            <Text color="red">{'  '}✗ {error}</Text>
+            <Text color="red">✗ {error}</Text>
           ) : (
-            <Text color="white" dimColor>
-              {'  '}Ready in {tuiMode === 'reverse' ? 'Reverse Mode (creates build instructions)' : 'Explore Mode (codebase explanation)'}
-            </Text>
+            <Text color="white" dimColor> </Text>
           )}
-        </Box>
-
-        <Box marginTop={1} flexDirection="row" justifyContent="space-between" width={80}>
-          <Box>
-            <Text color="white" dimColor>
-              {'  '}Enter to submit · \ or / for commands
-            </Text>
-          </Box>
-          <Box marginRight={2}>
-            <Text color="white" dimColor>Mode: </Text>
-            <Text color={tuiMode === 'reverse' ? 'cyan' : 'yellow'} bold>
-              {tuiMode === 'reverse' ? 'Reverse 🛠️' : 'Explore 🔍'}
-            </Text>
-            <Text color="white" dimColor> (Tab to switch)</Text>
-          </Box>
         </Box>
       </Box>
 
+      {/* ── Keybind hints ─────────────────────────────────── */}
+      <Box marginTop={1} flexDirection="row" alignItems="center">
+        <Text color="white" dimColor>  </Text>
+        <Text color="black" backgroundColor="white"> Enter </Text>
+        <Text color="white" dimColor> submit  </Text>
+        <Text color="black" backgroundColor="white"> \ </Text>
+        <Text color="white" dimColor> commands  </Text>
+        <Text color="black" backgroundColor="white"> Tab </Text>
+        <Text color="white" dimColor> switch mode</Text>
+      </Box>
+
+      {/* ── Recent sessions ───────────────────────────────── */}
       {recentSessions.length > 0 && (
         <Box flexDirection="column" marginTop={2}>
           <Box marginBottom={0}>
-            <Text color="white" dimColor>
-              {'  '}{'─'.repeat(44)}
-            </Text>
+            <Text color="cyan" dimColor>{'╾' + '─'.repeat(44) + '╼'}</Text>
           </Box>
-          <Text color="white" dimColor>
-            {'  '}Recent sessions
-          </Text>
-          {recentSessions.map((s) => (
-            <Box key={s.id} flexDirection="row" paddingLeft={2}>
-              <Text color="cyan" dimColor>
-                #{s.id}{'  '}
+          <Box marginBottom={0}>
+            <Text color="white" bold>{'  '}Recent Sessions</Text>
+          </Box>
+          {recentSessions.map((s, idx) => (
+            <Box key={s.id} flexDirection="row" paddingLeft={2} alignItems="center">
+              {/* Index badge */}
+              <Text color="black" backgroundColor="cyan"> {idx + 1} </Text>
+              <Text color="white" dimColor>  </Text>
+              {/* Repo/chat label */}
+              <Text color="white">
+                {s.repoUrl === 'chat'
+                  ? 'General Chat'
+                  : s.repoUrl.replace('https://github.com/', '')}
               </Text>
-              <Text color="white" dimColor>
-                {s.repoUrl === 'chat' ? 'General Chat' : s.repoUrl.replace('https://github.com/', '')}
-              </Text>
-              <Text color="white" dimColor>
-                {'  '}{timeAgo(s.updatedAt)}
-              </Text>
+              <Text color="white" dimColor>  </Text>
+              {/* Time ago */}
+              <Text color="cyan" dimColor>{timeAgo(s.updatedAt)}</Text>
+              <Text color="white" dimColor>  #</Text>
+              <Text color="cyan" dimColor>{s.id}</Text>
             </Box>
           ))}
-          <Text color="white" dimColor>
-            {'  '}\resume {'<id>'} to continue
-          </Text>
+          <Box marginTop={0} paddingLeft={2}>
+            <Text color="white" dimColor>Type </Text>
+            <Text color="cyan">\resume {'<id>'}</Text>
+            <Text color="white" dimColor> to continue a session</Text>
+          </Box>
         </Box>
       )}
     </Box>

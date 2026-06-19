@@ -4,12 +4,13 @@
 // ─────────────────────────────────────────────────────────────
 
 import React, { useState } from 'react';
-import { Box, Text, useApp } from 'ink';
+import { Box, Text } from 'ink';
 import TextInput from 'ink-text-input';
 import terminalLink from 'terminal-link';
 import { OpenRouterClient } from '../../api/OpenRouterClient.js';
 import { setApiKey, setSetupStep, setCachedModels, markModelsSeen } from '../../config/store.js';
 import { Spinner } from '../components/Spinner.js';
+
 import type { OpenRouterModel } from '../../types/index.js';
 
 interface SetupApiKeyProps {
@@ -68,31 +69,53 @@ export function SetupApiKey({ onComplete }: SetupApiKeyProps) {
     }
   };
 
+  const isInput = phase === 'input' || phase === 'error';
+
   return (
-    <Box flexDirection="column" paddingLeft={2}>
-      <Box marginBottom={1}>
-        <Text color="white" dimColor>
-          Step 2 of 3 — {'  '}
-        </Text>
-        <Text color="cyan">OpenRouter API Key</Text>
+    <Box flexGrow={1} justifyContent="center" alignItems="center" flexDirection="column" width="100%">
+      <Box flexDirection="column" alignItems="center" paddingY={2} width={70}>
+        {/* Header Banner */}
+      <Box marginBottom={2} flexDirection="row">
+        <Text color="black" backgroundColor="white" bold>  GIT-REVERSE  </Text>
+        <Text color="white" dimColor>  v1.2.0 initial setup</Text>
       </Box>
 
-      <Box marginBottom={1} flexDirection="column">
-        <Text color="white" dimColor>
-          {'  '}Get a free key at{' '}
-          <Text color="cyan">{OPENROUTER_LINK}</Text>
-        </Text>
-        <Text color="white" dimColor>
-          {'  '}Create an account → API Keys → Create Key → copy it below.
-        </Text>
+      {/* Step progress badges */}
+      <Box marginBottom={2} flexDirection="row" alignItems="center">
+        <Text color="white" dimColor>1 </Text>
+        <Box paddingX={1}><Text color="white" dimColor>NAME</Text></Box>
+        <Text color="white" dimColor>───</Text>
+        <Text color="black" backgroundColor="cyan" bold> 2 </Text>
+        <Box paddingX={1}><Text color="cyan" bold>API KEY</Text></Box>
+        <Text color="white" dimColor>───</Text>
+        <Box paddingX={1}><Text color="white" dimColor>3</Text></Box>
+        <Box paddingX={1}><Text color="white" dimColor>MODEL</Text></Box>
       </Box>
 
-      {phase === 'input' || phase === 'error' ? (
-        <Box flexDirection="column">
-          <Box>
-            <Text color="white" dimColor>
-              {'  key  '}
-            </Text>
+      {/* Instructions */}
+      <Box marginBottom={2} flexDirection="column">
+        <Box flexDirection="row">
+          <Text color="white" dimColor>Get a free key at </Text>
+          <Text color="cyan" bold>{OPENROUTER_LINK}</Text>
+        </Box>
+        <Text color="white" dimColor>Create account → API Keys → Create Key → paste below.</Text>
+      </Box>
+
+      {/* Input state */}
+      {isInput && (
+        <Box
+          flexDirection="column"
+          alignItems="center"
+          borderStyle="bold"
+          borderColor={phase === 'error' ? 'red' : 'cyan'}
+          paddingX={2}
+          paddingY={1}
+        >
+          <Box flexDirection="row" alignItems="center" marginBottom={1}>
+            <Text color="black" backgroundColor={phase === 'error' ? 'red' : 'cyan'} bold>  OPENROUTER API KEY  </Text>
+          </Box>
+          <Box flexDirection="row" alignItems="center" marginBottom={1}>
+            <Text color={phase === 'error' ? 'red' : 'cyan'} bold>›  </Text>
             <TextInput
               value={value}
               onChange={(v) => {
@@ -105,40 +128,49 @@ export function SetupApiKey({ onComplete }: SetupApiKeyProps) {
               mask="*"
             />
           </Box>
-
-          {error && (
-            <Box marginTop={1}>
-              <Text color="red">{'  '}{error}</Text>
-            </Box>
-          )}
-
-          <Box marginTop={1}>
-            <Text color="white" dimColor>
-              {'  '}Press Enter to validate
-            </Text>
-          </Box>
-        </Box>
-      ) : phase === 'validating' ? (
-        <Box flexDirection="column" gap={1}>
-          <Spinner label="Validating key..." />
-          <Spinner label="Fetching free models..." color="white" />
-        </Box>
-      ) : (
-        <Box flexDirection="column">
-          <Box>
-            <Text color="green">{'  '}✓ Key valid</Text>
-          </Box>
-          <Box>
-            <Text color="white" dimColor>
-              {'  '}Found{' '}
-            </Text>
-            <Text color="cyan">{models.length}</Text>
-            <Text color="white" dimColor>
-              {' '}free model{models.length !== 1 ? 's' : ''}
-            </Text>
+          <Box height={1}>
+            {error
+              ? <Text color="red" bold>✗ {error}</Text>
+              : <Text color="white" dimColor>Stored locally in ~/.config/git-reverse</Text>
+            }
           </Box>
         </Box>
       )}
+
+      {/* Validating state */}
+      {phase === 'validating' && (
+        <Box flexDirection="column" alignItems="center" borderStyle="bold" borderColor="cyan" paddingX={2} paddingY={1}>
+           <Box marginBottom={1}>
+             <Text color="black" backgroundColor="cyan" bold>  VERIFYING...  </Text>
+           </Box>
+           <Spinner label="Validating key…" step="1/2" />
+           <Spinner label="Fetching free models…" color="white" step="2/2" />
+        </Box>
+      )}
+
+      {/* Done state */}
+      {phase === 'done' && (
+        <Box flexDirection="column" alignItems="center" borderStyle="bold" borderColor="green" paddingX={2} paddingY={1}>
+          <Box flexDirection="row" alignItems="center" marginBottom={1}>
+            <Text color="black" backgroundColor="green" bold>  ✓ KEY VALID  </Text>
+          </Box>
+          <Box flexDirection="row">
+            <Text color="green" dimColor>Found </Text>
+            <Text color="cyan" bold>{models.length}</Text>
+            <Text color="green" dimColor> free model{models.length !== 1 ? 's' : ''}</Text>
+          </Box>
+        </Box>
+      )}
+
+      {/* Keyboard hint */}
+      {isInput && (
+        <Box marginTop={2} flexDirection="row" alignItems="center">
+          <Text color="white" dimColor>Press </Text>
+          <Text color="black" backgroundColor="white" bold> Enter </Text>
+          <Text color="white" dimColor> to validate</Text>
+        </Box>
+      )}
+      </Box>
     </Box>
   );
 }

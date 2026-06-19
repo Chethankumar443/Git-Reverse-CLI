@@ -103,6 +103,7 @@ export type AnalysisMode = 'standard' | 'deep' | 'compact' | 'query' | 'explore'
 
 export type AppScreen =
   | 'loading'
+  | 'splash'
   | 'setup-username'
   | 'setup-apikey'
   | 'setup-model'

@@ -3,17 +3,16 @@
 //  Central screen state machine
 // ─────────────────────────────────────────────────────────────
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Box, Text, useInput, useApp } from 'ink';
+import React, { useState, useEffect } from 'react';
+import { Box, Text, useApp } from 'ink';
 import { Header } from './components/Header.js';
 import { SetupUsername } from './screens/SetupUsername.js';
 import { SetupApiKey } from './screens/SetupApiKey.js';
 import { SetupModel } from './screens/SetupModel.js';
-import { Dashboard } from './screens/Dashboard.js';
-import { AnalysisScreen } from './screens/Analysis.js';
+import { ChatScreen } from './screens/ChatScreen.js';
 import { SettingsScreen } from './screens/Settings.js';
 import { ResumeSession } from './screens/ResumeSession.js';
-import { SessionBanner } from './components/SessionBanner.js';
+import { SplashScreen } from './screens/SplashScreen.js';
 import {
   getUser,
   getMergedUserConfig,
@@ -50,10 +49,12 @@ export function App({ resumeSessionId, initialUrl, initialModel, autoCopy, onUpd
   const cached = getCachedModels();
 
   const initialScreen: AppScreen = (() => {
-    if (!user.setupComplete) return user.setupStep === 'username' ? 'setup-username' : 'setup-apikey';
+    if (!user.setupComplete || !user.apiKey) {
+      return user.name ? 'setup-apikey' : 'setup-username';
+    }
     if (resumeSessionId) return 'resume-session';
     if (initialUrl) return 'analysis';
-    return 'dashboard';
+    return 'splash';
   })();
 
   const [screen, setScreen] = useState<AppScreen>(initialScreen);
@@ -62,19 +63,8 @@ export function App({ resumeSessionId, initialUrl, initialModel, autoCopy, onUpd
   const [activeModel, setActiveModel] = useState(user.selectedModel);
   const [freeModels, setFreeModels] = useState<OpenRouterModel[]>(cached.models);
   const [newModels, setNewModels] = useState<OpenRouterModel[]>([]);
-  const [pendingAnalysis, setPendingAnalysis] = useState<AnalysisInput | null>(
-    initialUrl && user.setupComplete
-      ? {
-          repoUrl: initialUrl,
-          mode: 'standard',
-          model: initialModel || user.selectedModel,
-          apiKey: user.apiKey,
-          autoCopy,
-        }
-      : null
-  );
-  const [exitSessionId, setExitSessionId] = useState<string | null>(null);
-  const [exitRepoUrl, setExitRepoUrl] = useState<string | null>(null);
+  
+  const [initialRunUrl, setInitialRunUrl] = useState<string | null>(initialUrl || null);
   const [resumeId, setResumeId] = useState(resumeSessionId ?? '');
 
   // ── Background model refresh on launch ───────────────────
@@ -102,30 +92,14 @@ export function App({ resumeSessionId, initialUrl, initialModel, autoCopy, onUpd
 
   // ── SIGINT / graceful exit ────────────────────────────────
   useEffect(() => {
-    const sessionMgr = new SessionManager();
-    sessionMgr.registerSigintHandler((savedId) => {
-      const active = SessionManager.getActiveSession();
-      if (active) {
-        SessionManager.printExitBanner();
-      } else {
-        process.stdout.write('\n\n  Exiting git-reverse.\n\n');
-      }
-      process.exit(0);
-    });
-    return () => sessionMgr.removeSigintHandler();
+    // We register an empty SIGINT handler so that Node doesn't instantly exit.
+    // This allows Ink's `useInput` to catch Ctrl+C manually in the screens.
+    const handler = () => {};
+    process.on('SIGINT', handler);
+    return () => { process.removeListener('SIGINT', handler); };
   }, []);
 
-  // ── Global keyboard: Esc to go back ──────────────────────
-  useInput((_, key) => {
-    if (key.escape) {
-      if (screen === 'settings' || screen === 'resume-session') {
-        navigateTo('dashboard');
-      }
-    }
-  });
-
   const navigateTo = (next: AppScreen) => {
-    console.clear();
     setPrevScreen(screen);
     setScreen(next);
   };
@@ -147,19 +121,6 @@ export function App({ resumeSessionId, initialUrl, initialModel, autoCopy, onUpd
     navigateTo('dashboard');
   };
 
-  const handleAnalyze = (repoUrl: string, query: string, mode: AnalysisMode) => {
-    const currentUser = getMergedUserConfig();
-    setPendingAnalysis({
-      repoUrl,
-      query,
-      mode,
-      model: currentUser.selectedModel,
-      apiKey: currentUser.apiKey,
-      githubToken: currentUser.githubToken,
-    });
-    navigateTo('analysis');
-  };
-
   const handleCommand = (cmd: string) => {
     if (cmd === 'update') {
       if (onUpdateTriggered) onUpdateTriggered();
@@ -168,37 +129,16 @@ export function App({ resumeSessionId, initialUrl, initialModel, autoCopy, onUpd
     }
     if (cmd === 'settings') return navigateTo('settings');
     if (cmd === 'sessions') return navigateTo('resume-session');
+    if (cmd === 'clear') {
+      process.stdout.write('\x1B[2J\x1B[0f');
+      return;
+    }
     if (cmd === 'quit') { exit(); return; }
     if (cmd.startsWith('resume:')) {
       const id = cmd.slice(7);
       setResumeId(id);
-      navigateTo('resume-session');
+      navigateTo('dashboard');
     }
-  };
-
-  const handleAnalysisComplete = (output: string, sessionId: string) => {
-    setExitSessionId(sessionId);
-    setExitRepoUrl(pendingAnalysis?.repoUrl ?? null);
-    // Stay on analysis screen — user presses Esc to go back
-  };
-
-  const handleAnalysisBack = () => {
-    setExitSessionId(null);
-    navigateTo('dashboard');
-  };
-
-  const handleResumeSession = (session: Session) => {
-    const currentUser = getMergedUserConfig();
-    setPendingAnalysis({
-      repoUrl: session.repoUrl,
-      query: session.query,
-      mode: session.mode,
-      model: session.model,
-      apiKey: currentUser.apiKey,
-      githubToken: currentUser.githubToken,
-      resumeSessionId: session.id,
-    });
-    navigateTo('analysis');
   };
 
   const handleModelChanged = (model: OpenRouterModel) => {
@@ -212,17 +152,23 @@ export function App({ resumeSessionId, initialUrl, initialModel, autoCopy, onUpd
   };
 
   // ── Header visibility ─────────────────────────────────────
-  const showHeader = screen !== 'analysis';
+  const showHeader = screen !== 'dashboard' && screen !== 'splash';
+
+  const terminalHeight = process.stdout.rows ? process.stdout.rows - 1 : 24;
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" minHeight={terminalHeight}>
       {showHeader && (
         <Header
-          username={screen === 'dashboard' || screen === 'settings' ? username : undefined}
+          username={screen === 'settings' ? username : undefined}
           model={activeModel || undefined}
           version={VERSION}
           newModelCount={newModels.length}
         />
+      )}
+
+      {screen === 'splash' && (
+        <SplashScreen onComplete={() => navigateTo('dashboard')} />
       )}
 
       {screen === 'setup-username' && (
@@ -238,21 +184,11 @@ export function App({ resumeSessionId, initialUrl, initialModel, autoCopy, onUpd
       )}
 
       {screen === 'dashboard' && (
-        <Dashboard
-          username={username}
-          model={activeModel}
+        <ChatScreen
+          initialResumeId={resumeId || undefined}
+          initialUrl={initialRunUrl || undefined}
           newModels={newModels}
-          onAnalyze={handleAnalyze}
           onCommand={handleCommand}
-        />
-      )}
-
-      {screen === 'analysis' && pendingAnalysis && (
-        <AnalysisScreen
-          input={pendingAnalysis}
-          onComplete={handleAnalysisComplete}
-          onBack={handleAnalysisBack}
-          onError={() => {}}
         />
       )}
 
@@ -267,7 +203,10 @@ export function App({ resumeSessionId, initialUrl, initialModel, autoCopy, onUpd
       {screen === 'resume-session' && (
         <ResumeSession
           initialId={resumeId}
-          onResume={handleResumeSession}
+          onResume={(session) => {
+            setResumeId(session.id);
+            navigateTo('dashboard');
+          }}
           onBack={() => navigateTo('dashboard')}
         />
       )}

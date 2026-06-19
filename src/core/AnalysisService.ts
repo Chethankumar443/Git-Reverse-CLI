@@ -1,6 +1,7 @@
 // ─────────────────────────────────────────────────────────────
 //  git-reverse — Analysis Service
-//  Orchestrates: GitHub fetch / Local dir scan → Prompt build → LLM stream
+//  Master Prompt Extraction Pipeline orchestrator:
+//  GitHub skeleton fetch → PromptBuilder → LLM stream
 // ─────────────────────────────────────────────────────────────
 
 import { GitHubClient } from '../api/GitHubClient.js';
@@ -22,9 +23,24 @@ export type AnalysisPhase =
   | 'done'
   | 'error';
 
+// Human-readable step labels shown in the TUI spinner badge
+export const PHASE_LABELS: Record<AnalysisPhase, string> = {
+  idle:            'IDLE',
+  'parsing-url':   'RESOLVE',
+  'scanning-local':'SCAN',
+  'fetching-meta': 'META',
+  'fetching-tree': 'SKELETON',
+  'fetching-files':'MANIFESTS',
+  'building-prompt':'SYNTHESIZE',
+  streaming:       'GENERATE',
+  done:            'DONE',
+  error:           'ERROR',
+};
+
 export interface AnalysisProgress {
   phase: AnalysisPhase;
   message: string;
+  step?: string;       // badge label for TUI spinner
   repoMeta?: RepoAnalysis['meta'];
   messages?: Message[];
 }
@@ -44,43 +60,58 @@ export class AnalysisService {
   ): AsyncGenerator<StreamChunk> {
     const { repoUrl, query, mode, model } = input;
 
-    // ── Branch: general chatbot (Explore/General mode without repo) ──
+    // ── Branch: general chatbot (no repo URL) ─────────────
     if (repoUrl === 'chat') {
-      onProgress({ phase: 'building-prompt', message: 'Connecting to OpenRouter...' });
+      onProgress({
+        phase: 'building-prompt',
+        step: 'CONNECT',
+        message: 'Connecting to OpenRouter...',
+      });
+
       const messages: Message[] = [
-        {
-          role: 'system',
-          content: 'You are git-reverse, an expert software assistant. Help the user with their programming question.',
-        },
-        {
-          role: 'user',
-          content: query || 'Hello',
-        },
+        PromptBuilder.buildChatSystemPrompt(mode),
+        { role: 'user', content: query || 'Hello' },
       ];
+
       onProgress({
         phase: 'streaming',
+        step: 'GENERATE',
         message: `Chatting with ${model.split('/').pop()}...`,
       });
+
       yield* this.openrouterClient.streamCompletion(model, messages, {
         maxTokens: 4096,
         temperature: 0.5,
       });
-      onProgress({ phase: 'done', message: 'Chat complete.', messages });
+
+      onProgress({ phase: 'done', message: 'Done.', messages });
       return;
     }
 
     let analysis: RepoAnalysis;
 
-    // ── Branch: local directory ──────────────────────────────
+    // ── Branch: local directory ────────────────────────────
     if (isLocalPath(repoUrl)) {
-      onProgress({ phase: 'scanning-local', message: `Scanning local directory: ${repoUrl}` });
+      onProgress({
+        phase: 'scanning-local',
+        step: 'SCAN',
+        message: `Scanning local directory: ${repoUrl}`,
+      });
 
       try {
-        analysis = await GitHubClient.analyzeLocalDir(repoUrl, (phase, detail) => {
+        analysis = await GitHubClient.analyzeLocalDir(repoUrl, (phase) => {
           if (phase === 'fetching-tree') {
-            onProgress({ phase: 'fetching-tree', message: 'Mapping local file tree...' });
+            onProgress({
+              phase: 'fetching-tree',
+              step: PHASE_LABELS['fetching-tree'],
+              message: 'Mapping architecture skeleton...',
+            });
           } else if (phase === 'fetching-files') {
-            onProgress({ phase: 'fetching-files', message: 'Reading key files...' });
+            onProgress({
+              phase: 'fetching-files',
+              step: PHASE_LABELS['fetching-files'],
+              message: 'Reading manifests & configs...',
+            });
           }
         });
       } catch (err: unknown) {
@@ -88,9 +119,14 @@ export class AnalysisService {
         throw new Error(`Failed to scan local directory "${repoUrl}":\n${msg}`);
       }
 
-    // ── Branch: GitHub URL ───────────────────────────────────
+    // ── Branch: GitHub URL ────────────────────────────────
     } else {
-      onProgress({ phase: 'parsing-url', message: 'Parsing repository URL...' });
+      onProgress({
+        phase: 'parsing-url',
+        step: PHASE_LABELS['parsing-url'],
+        message: 'Resolving repository...',
+      });
+
       const parsed = GitHubClient.parseUrl(repoUrl);
       if (!parsed) {
         throw new Error(
@@ -99,26 +135,30 @@ export class AnalysisService {
         );
       }
 
-      onProgress({
-        phase: 'fetching-meta',
-        message: `Fetching ${parsed.owner}/${parsed.repo} metadata...`,
-      });
-
       try {
+        onProgress({
+          phase: 'fetching-meta',
+          step: PHASE_LABELS['fetching-meta'],
+          message: `Fetching ${parsed.owner}/${parsed.repo} metadata...`,
+        });
+
         const meta = await this.githubClient.fetchRepoMeta(parsed.owner, parsed.repo);
 
         onProgress({
           phase: 'fetching-tree',
-          message: `Mapping file tree (${meta.defaultBranch})...`,
+          step: PHASE_LABELS['fetching-tree'],
+          message: `Mapping architecture skeleton (${meta.defaultBranch})...`,
           repoMeta: meta,
         });
 
         const branch = parsed.branch ?? meta.defaultBranch;
         const tree = await this.githubClient.fetchRepoTree(parsed.owner, parsed.repo, branch);
 
+        const fileCount = tree.filter((f) => f.type === 'file').length;
         onProgress({
           phase: 'fetching-files',
-          message: `Reading ${Math.min(tree.filter((f) => f.type === 'file').length, 12)} key files...`,
+          step: PHASE_LABELS['fetching-files'],
+          message: `Reading manifests & configs (${Math.min(fileCount, 12)} key files)...`,
           repoMeta: meta,
         });
 
@@ -130,7 +170,8 @@ export class AnalysisService {
           (fetched, total) => {
             onProgress({
               phase: 'fetching-files',
-              message: `Reading key files (${fetched}/${total})...`,
+              step: PHASE_LABELS['fetching-files'],
+              message: `Reading manifests & configs (${fetched}/${total})...`,
               repoMeta: meta,
             });
           },
@@ -145,7 +186,7 @@ export class AnalysisService {
         if (msg.includes('404')) {
           throw new Error(
             `Repository not found: ${GitHubClient.parseUrl(repoUrl)?.owner}/${GitHubClient.parseUrl(repoUrl)?.repo}\n` +
-              'Check the URL and ensure the repository is public (or provide a GitHub token for private repos).',
+              'Check the URL and ensure the repository is public (or add a GitHub token in Settings for private repos).',
           );
         }
         if (msg.includes('403') || msg.includes('rate limit') || msg.includes('secondary')) {
@@ -158,44 +199,74 @@ export class AnalysisService {
       }
     }
 
-    // ── Build prompt ─────────────────────────────────────────
+    // ── Build Master Prompt ───────────────────────────────
     onProgress({
       phase: 'building-prompt',
-      message: 'Building analysis prompt...',
+      step: PHASE_LABELS['building-prompt'],
+      message: 'Synthesizing Master Prompt...',
       repoMeta: analysis.meta,
     });
 
     const messages: Message[] = PromptBuilder.buildMessages(analysis, mode, query);
 
-    // Check token limits
+    // Token budget check
     const estimatedTokens = PromptBuilder.estimateTokens(messages);
     const cached = getCachedModels();
     const modelData = cached.models.find((m) => m.id === model);
     const contextLimit = modelData?.context_length ?? 8192;
 
-    if (estimatedTokens > contextLimit * 0.9) {
+    if (estimatedTokens > contextLimit * 0.85) {
       throw new Error(
-        `⚠️  Repository is too large for this model (${estimatedTokens.toLocaleString()} / ${contextLimit.toLocaleString()} tokens).\n` +
-          'Try a 100k+ context model, or use \\compact mode to reduce the prompt size.',
+        `Repository skeleton is too large for this model (${estimatedTokens.toLocaleString()} / ${contextLimit.toLocaleString()} tokens).\n` +
+          'Try: \\compact mode to reduce output, or switch to a 100k+ context model in Settings.',
       );
     }
 
-    // ── Stream LLM response ──────────────────────────────────
+    // ── Stream LLM response ───────────────────────────────
     onProgress({
       phase: 'streaming',
-      message: `Analyzing with ${model.split('/').pop()}...`,
+      step: PHASE_LABELS['streaming'],
+      message: `Generating blueprint with ${model.split('/').pop()}...`,
       repoMeta: analysis.meta,
     });
 
-    yield* this.openrouterClient.streamCompletion(model, messages, {
-      maxTokens: mode === 'deep' ? 8192 : 4096,
-      temperature: mode === 'deep' ? 0.4 : 0.3,
-    });
+    const streamOptions = {
+      maxTokens: mode === 'deep' ? 8192 : mode === 'compact' ? 2048 : 6144,
+      temperature: mode === 'deep' ? 0.35 : mode === 'compact' ? 0.2 : 0.25,
+    };
 
-    onProgress({ phase: 'done', message: 'Analysis complete.', repoMeta: analysis.meta, messages });
+    try {
+      yield* this.openrouterClient.streamCompletion(model, messages, streamOptions);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      // Fallback on model not found, rate limits specific to model, or deprecated
+      if (msg.includes('404') || msg.includes('403') || msg.includes('deprecated') || msg.includes('E2003')) {
+        const fallbackModel = cached.models.find((m) => m.id !== model)?.id;
+        if (fallbackModel) {
+          onProgress({
+            phase: 'streaming',
+            step: PHASE_LABELS['streaming'],
+            message: `Model failed. Falling back to ${fallbackModel.split('/').pop()}...`,
+            repoMeta: analysis.meta,
+          });
+          yield* this.openrouterClient.streamCompletion(fallbackModel, messages, streamOptions);
+        } else {
+          throw err;
+        }
+      } else {
+        throw err;
+      }
+    }
+
+    onProgress({
+      phase: 'done',
+      message: 'Master Prompt complete.',
+      repoMeta: analysis.meta,
+      messages,
+    });
   }
 
-  // ── Summarize existing session ────────────────────────────
+  // ── Summarize existing session ─────────────────────────
 
   async *summarizeSession(
     messages: Message[],
@@ -208,7 +279,7 @@ export class AnalysisService {
     });
   }
 
-  // ── Static helper for repo meta display ──────────────────
+  // ── Static helper for repo meta display ───────────────
 
   static formatRepoStats(meta: RepoAnalysis['meta']): string {
     if (meta.owner === 'local') {

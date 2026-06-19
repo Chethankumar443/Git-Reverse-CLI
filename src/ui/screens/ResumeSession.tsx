@@ -4,9 +4,10 @@
 // ─────────────────────────────────────────────────────────────
 
 import React, { useState } from 'react';
-import { Box, Text } from 'ink';
+import { Box, Text, useInput } from 'ink';
 import TextInput from 'ink-text-input';
 import { SessionManager } from '../../core/SessionManager.js';
+
 import type { Session, AnalysisMode } from '../../types/index.js';
 import { timeAgo } from '../../utils/format.js';
 
@@ -21,6 +22,13 @@ export function ResumeSession({ initialId = '', onResume, onBack }: ResumeSessio
   const [error, setError] = useState('');
   const recentSessions = SessionManager.listSessions().slice(0, 8);
 
+  // Esc to go back
+  useInput((_, key) => {
+    if (key.escape) onBack();
+  });
+
+
+
   const handleSubmit = (val: string) => {
     const id = val.trim().replace(/^#/, '');
     if (!id) { setError('Enter a session ID.'); return; }
@@ -30,13 +38,14 @@ export function ResumeSession({ initialId = '', onResume, onBack }: ResumeSessio
   };
 
   return (
-    <Box flexDirection="column" paddingLeft={2}>
-      <Box marginBottom={1}>
+    <Box flexGrow={1} justifyContent="center" alignItems="center" flexDirection="column" width="100%">
+      <Box flexDirection="column" alignItems="center">
+        <Box marginBottom={1}>
         <Text color="cyan">Resume Session</Text>
       </Box>
 
-      <Box marginBottom={1} flexDirection="column">
-        <Text color="white" dimColor>{'  '}Enter a session ID to resume:</Text>
+      <Box marginBottom={1} flexDirection="column" alignItems="center">
+        <Text color="white" dimColor>Enter a session ID to resume:</Text>
         <Box marginTop={1}>
           <Text color="white" dimColor>{'  id  '}</Text>
           <TextInput
@@ -54,12 +63,12 @@ export function ResumeSession({ initialId = '', onResume, onBack }: ResumeSessio
       </Box>
 
       {recentSessions.length > 0 && (
-        <Box flexDirection="column" marginTop={1}>
+        <Box flexDirection="column" alignItems="center" marginTop={1}>
           <Box>
             <Text color="white" dimColor>{'  '}{'─'.repeat(44)}</Text>
           </Box>
-          <Text color="white" dimColor>{'  '}Saved sessions:</Text>
-          <Box flexDirection="column" marginTop={0} paddingLeft={2}>
+          <Text color="white" dimColor>Saved sessions:</Text>
+          <Box flexDirection="column" marginTop={0} alignItems="center">
             {recentSessions.map((s) => (
               <Box key={s.id} flexDirection="row">
                 <Text color="cyan">#{s.id}{'  '}</Text>
@@ -77,7 +86,8 @@ export function ResumeSession({ initialId = '', onResume, onBack }: ResumeSessio
       )}
 
       <Box marginTop={1}>
-        <Text color="white" dimColor>{'  '}Esc to go back</Text>
+        <Text color="white" dimColor>Esc to go back</Text>
+        </Box>
       </Box>
     </Box>
   );

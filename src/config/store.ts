@@ -8,6 +8,7 @@ import Conf from 'conf';
 import type { UserConfig, CachedModels, Session } from '../types/index.js';
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { encryptSecret, decryptSecret, isEncrypted } from './crypto.js';
 
 interface StoreSchema {
   user: UserConfig;
@@ -61,10 +62,49 @@ const store = new Conf<StoreSchema>({
   },
 });
 
-// ── User Config ───────────────────────────────────────────────
+import { Entry } from '@napi-rs/keyring';
 
+/**
+ * Read the user config. Attempts to load secrets from the OS Keychain.
+ * If secrets are missing in the keychain but present in the legacy `conf` file,
+ * it migrates them to the keychain and removes them from `conf`.
+ */
 export function getUser(): UserConfig {
-  return store.get('user');
+  const user = store.get('user');
+  let migrated = false;
+
+  const readSecret = (field: 'apiKey' | 'githubToken'): string => {
+    try {
+      const entry = new Entry('git-reverse', field);
+      const keychainVal = entry.getPassword();
+      if (keychainVal) return keychainVal;
+    } catch {
+      // Ignore keychain read errors (e.g., missing headless support)
+    }
+
+    // Fallback: check legacy conf
+    const raw = user[field];
+    if (!raw) return '';
+    
+    migrated = true;
+    if (isEncrypted(raw)) return decryptSecret(raw);
+    return raw;
+  };
+
+  const result: UserConfig = {
+    ...user,
+    apiKey: readSecret('apiKey'),
+    githubToken: readSecret('githubToken'),
+  };
+
+  if (migrated) {
+    // Save to keychain. The setter functions will handle wiping from conf
+    // if successful, or keeping it in conf if the keychain fails.
+    setApiKey(result.apiKey);
+    setGithubToken(result.githubToken);
+  }
+
+  return result;
 }
 
 export interface LocalConfig {
@@ -103,18 +143,54 @@ export function getMergedUserConfig(): UserConfig {
 }
 
 export function setUserName(name: string): void {
-  const user = getUser();
+  const user = store.get('user');
   store.set('user', { ...user, name: name.trim() });
 }
 
 export function setApiKey(apiKey: string): void {
-  const user = getUser();
-  store.set('user', { ...user, apiKey });
+  let keychainSuccess = false;
+  try {
+    const entry = new Entry('git-reverse', 'apiKey');
+    if (apiKey) {
+      entry.setPassword(apiKey);
+    } else {
+      entry.deletePassword();
+    }
+    keychainSuccess = true;
+  } catch {
+    // Ignore headless/no-keychain environment errors
+  }
+
+  const user = store.get('user');
+  if (keychainSuccess) {
+    store.set('user', { ...user, apiKey: '' });
+  } else {
+    // Fallback: save to plain conf
+    store.set('user', { ...user, apiKey });
+  }
 }
 
 export function setGithubToken(token: string): void {
-  const user = getUser();
-  store.set('user', { ...user, githubToken: token });
+  let keychainSuccess = false;
+  try {
+    const entry = new Entry('git-reverse', 'githubToken');
+    if (token) {
+      entry.setPassword(token);
+    } else {
+      entry.deletePassword();
+    }
+    keychainSuccess = true;
+  } catch {
+    // Ignore headless/no-keychain environment errors
+  }
+
+  const user = store.get('user');
+  if (keychainSuccess) {
+    store.set('user', { ...user, githubToken: '' });
+  } else {
+    // Fallback: save to plain conf
+    store.set('user', { ...user, githubToken: token });
+  }
 }
 
 export function setSelectedModel(modelId: string): void {

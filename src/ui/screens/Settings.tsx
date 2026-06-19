@@ -4,9 +4,10 @@
 // ─────────────────────────────────────────────────────────────
 
 import React, { useState } from 'react';
-import { Box, Text } from 'ink';
+import { Box, Text, useInput } from 'ink';
 import SelectInput from 'ink-select-input';
 import TextInput from 'ink-text-input';
+import terminalLink from 'terminal-link';
 import {
   getUser,
   setUserName,
@@ -21,6 +22,7 @@ import { OpenRouterClient } from '../../api/OpenRouterClient.js';
 import { GitHubClient } from '../../api/GitHubClient.js';
 import { SetupModel } from './SetupModel.js';
 import { Spinner } from '../components/Spinner.js';
+
 import type { OpenRouterModel } from '../../types/index.js';
 import { truncate } from '../../utils/format.js';
 
@@ -60,6 +62,19 @@ export function SettingsScreen({ onBack, onModelChanged, onUsernameChanged }: Se
   const [models, setModels] = useState<OpenRouterModel[]>(cached.models);
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
+
+  // Esc: go back from any sub-view or back to dashboard from menu
+  useInput((_, key) => {
+    if (key.escape) {
+      if (view === 'menu') {
+        onBack();
+      } else if (view !== 'refreshing') {
+        setView('menu');
+        setError('');
+        setStatus('');
+      }
+    }
+  });
 
   const handleMenuSelect = async (item: { value: string }) => {
     if (item.value === 'back') { onBack(); return; }
@@ -149,8 +164,9 @@ export function SettingsScreen({ onBack, onModelChanged, onUsernameChanged }: Se
   const hasGhToken = !!currentUser.githubToken;
 
   return (
-    <Box flexDirection="column" paddingLeft={2}>
-      <Box marginBottom={1}>
+    <Box flexGrow={1} justifyContent="center" alignItems="center" flexDirection="column" width="100%">
+      <Box flexDirection="column" alignItems="center">
+        <Box marginBottom={1}>
         <Text color="cyan">Settings</Text>
         <Text color="white" dimColor>  · {user.name} · {truncate(user.selectedModel.split('/').pop() ?? user.selectedModel, 30)}</Text>
       </Box>
@@ -183,7 +199,7 @@ export function SettingsScreen({ onBack, onModelChanged, onUsernameChanged }: Se
       )}
 
       {view === 'menu' && (
-        <Box paddingLeft={2} marginTop={1}>
+        <Box marginTop={1} alignItems="center">
           <SelectInput
             items={MENU_ITEMS.filter((i) => !('disabled' in i && i.disabled))}
             onSelect={handleMenuSelect}
@@ -197,7 +213,7 @@ export function SettingsScreen({ onBack, onModelChanged, onUsernameChanged }: Se
       )}
 
       {view === 'change-name' && (
-        <Box paddingLeft={2} marginTop={1} flexDirection="column">
+        <Box marginTop={1} flexDirection="column" alignItems="center">
           <Text color="white" dimColor>New username:</Text>
           <Box marginTop={1}>
             <TextInput
@@ -211,8 +227,14 @@ export function SettingsScreen({ onBack, onModelChanged, onUsernameChanged }: Se
       )}
 
       {view === 'change-key' && (
-        <Box paddingLeft={2} marginTop={1} flexDirection="column">
+        <Box marginTop={1} flexDirection="column" alignItems="center">
           <Text color="white" dimColor>New OpenRouter API key:</Text>
+          <Box marginTop={0} marginBottom={1}>
+            <Text color="white" dimColor>
+              Get a key at{' '}
+              <Text color="cyan">{terminalLink('openrouter.ai/keys', 'https://openrouter.ai/keys', { fallback: (_, url) => url })}</Text>
+            </Text>
+          </Box>
           <Box marginTop={1}>
             <TextInput
               value={keyValue}
@@ -226,9 +248,9 @@ export function SettingsScreen({ onBack, onModelChanged, onUsernameChanged }: Se
       )}
 
       {view === 'change-github-token' && (
-        <Box paddingLeft={2} marginTop={1} flexDirection="column">
+        <Box marginTop={1} flexDirection="column" alignItems="center">
           {/* Instructions */}
-          <Box flexDirection="column" marginBottom={1}>
+          <Box flexDirection="column" alignItems="center" marginBottom={1}>
             <Text color="cyan" bold>GitHub Personal Access Token</Text>
             <Text color="white" dimColor> </Text>
             <Text color="white" dimColor>Why?  Unauthenticated: 60 req/hr  →  With token: 5,000 req/hr</Text>
@@ -278,16 +300,17 @@ export function SettingsScreen({ onBack, onModelChanged, onUsernameChanged }: Se
       )}
 
       {view === 'menu' && (
-        <Box marginTop={1}>
-          <Text color="white" dimColor>{'  '}Esc to go back</Text>
+        <Box marginTop={1} alignItems="center">
+          <Text color="white" dimColor>Esc to go back</Text>
         </Box>
       )}
 
       {(view === 'change-name' || view === 'change-key' || view === 'change-github-token') && (
-        <Box marginTop={1}>
-          <Text color="white" dimColor>{'  '}Esc to cancel</Text>
+        <Box marginTop={1} alignItems="center">
+          <Text color="white" dimColor>Esc to cancel</Text>
         </Box>
       )}
+      </Box>
     </Box>
   );
 }
