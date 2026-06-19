@@ -109,7 +109,7 @@ export const Features = () => {
   return (
     <section
       id="features"
-      className="relative w-full py-24 md:py-32 bg-zinc-950"
+      className="relative w-full py-24 md:py-32"
     >
       <div className="mx-auto max-w-6xl px-4 md:px-6">
         <motion.div

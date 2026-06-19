@@ -4,10 +4,12 @@ import { Features } from "./components/sections/Features";
 import { Commands } from "./components/sections/Commands";
 import { Onboarding } from "./components/sections/Onboarding";
 import { Footer } from "./components/sections/Footer";
+import { AuroraBackground } from "./components/sections/AuroraBackground";
 
 function App() {
   return (
-    <div className="min-h-[100dvh] bg-zinc-950 text-zinc-50 antialiased">
+    <div className="relative min-h-[100dvh] text-zinc-50 antialiased">
+      <AuroraBackground />
       <Navbar />
       <main>
         <Hero />

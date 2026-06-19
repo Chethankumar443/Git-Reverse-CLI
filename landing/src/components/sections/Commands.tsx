@@ -70,7 +70,7 @@ const tableRowVariants = {
 
 export const Commands = () => {
   return (
-    <section id="commands" className="relative w-full py-24 md:py-32 bg-zinc-950">
+    <section id="commands" className="relative w-full py-24 md:py-32">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-emerald-950/20 via-transparent to-transparent" />
 
       <div className="relative mx-auto max-w-6xl px-4 md:px-6">

@@ -41,7 +41,7 @@ const footerCols = [
 
 export const Footer = () => {
   return (
-    <footer className="border-t border-zinc-800/50 bg-zinc-950">
+    <footer className="border-t border-zinc-800/50 bg-zinc-950/60 backdrop-blur-xl">
       <div className="mx-auto max-w-6xl px-4 md:px-6 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-8">
           {/* Brand */}
