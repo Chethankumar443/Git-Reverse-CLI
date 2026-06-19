@@ -1,4 +1,5 @@
-import { motion } from "framer-motion";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const terminalCommands = [
   {
@@ -69,13 +70,15 @@ const tableRowVariants = {
 };
 
 export const Commands = () => {
+  const [activeTab, setActiveTab] = useState<"terminal" | "slash">("terminal");
+
   return (
     <section id="commands" className="relative w-full py-24 md:py-32">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-emerald-950/20 via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-emerald-950/10 via-transparent to-transparent" />
 
-      <div className="relative mx-auto max-w-6xl px-4 md:px-6">
+      <div className="relative mx-auto max-w-4xl px-4 md:px-6">
         <motion.div
-          className="mb-16 max-w-2xl"
+          className="mb-12 max-w-2xl text-center mx-auto"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
@@ -93,79 +96,118 @@ export const Commands = () => {
           </p>
         </motion.div>
 
-        {/* Terminal Commands */}
+        {/* Tab Selection */}
         <motion.div
-          className="mb-12 overflow-hidden rounded-2xl border border-zinc-800/60 bg-zinc-900/30"
+          className="flex justify-center mb-8"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.6, delay: 0.1 }}
         >
-          <div className="border-b border-zinc-800/60 px-6 py-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-zinc-500">
-              Terminal Commands
-            </h3>
-          </div>
-          <div className="divide-y divide-zinc-800/40">
-            {terminalCommands.map((cmd, i) => (
-              <motion.div
-                key={cmd.command}
-                variants={tableRowVariants}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.05 }}
-                className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 px-6 py-4 hover:bg-zinc-800/20 transition-colors"
-              >
-                <code className="shrink-0 text-sm font-mono text-emerald-400">
-                  {cmd.command}
-                </code>
-                <span className="text-sm text-zinc-400">
-                  {cmd.description}
-                </span>
-              </motion.div>
-            ))}
+          <div className="flex space-x-1 rounded-full bg-zinc-900/60 p-1 border border-zinc-800/80 backdrop-blur-md">
+            <button
+              onClick={() => setActiveTab("terminal")}
+              className={`relative rounded-full px-6 py-2 text-sm font-medium transition-colors ${
+                activeTab === "terminal" ? "text-zinc-50" : "text-zinc-400 hover:text-zinc-300"
+              }`}
+            >
+              {activeTab === "terminal" && (
+                <motion.div
+                  layoutId="active-tab"
+                  className="absolute inset-0 rounded-full bg-zinc-800"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              <span className="relative z-10">Terminal Commands</span>
+            </button>
+            <button
+              onClick={() => setActiveTab("slash")}
+              className={`relative rounded-full px-6 py-2 text-sm font-medium transition-colors ${
+                activeTab === "slash" ? "text-zinc-50" : "text-zinc-400 hover:text-zinc-300"
+              }`}
+            >
+              {activeTab === "slash" && (
+                <motion.div
+                  layoutId="active-tab"
+                  className="absolute inset-0 rounded-full bg-zinc-800"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              <span className="relative z-10">Slash Commands</span>
+            </button>
           </div>
         </motion.div>
 
-        {/* Slash Commands */}
+        {/* Tab Content */}
         <motion.div
-          className="overflow-hidden rounded-2xl border border-zinc-800/60 bg-zinc-900/30"
+          className="overflow-hidden rounded-2xl border border-zinc-800/60 bg-zinc-900/30 backdrop-blur-md min-h-[420px]"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
         >
-          <div className="border-b border-zinc-800/60 px-6 py-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-zinc-500">
-              Interactive Slash Commands
-            </h3>
-          </div>
-          <div className="divide-y divide-zinc-800/40">
-            {slashCommands.map((cmd, i) => (
+          <AnimatePresence mode="wait">
+            {activeTab === "terminal" ? (
               <motion.div
-                key={cmd.command}
-                variants={tableRowVariants}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.04 }}
-                className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 px-6 py-4 hover:bg-zinc-800/20 transition-colors"
+                key="terminal"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 10 }}
+                transition={{ duration: 0.2 }}
+                className="divide-y divide-zinc-800/40"
               >
-                <code className="shrink-0 min-w-[140px] text-sm font-mono text-emerald-400">
-                  {cmd.command}
-                </code>
-                <span className="flex-1 text-sm text-zinc-400">
-                  {cmd.description}
-                </span>
-                <span className="shrink-0 inline-flex items-center gap-1.5 text-xs text-zinc-500">
-                  <kbd className="rounded border border-zinc-700 bg-zinc-800 px-1.5 py-0.5 font-mono text-[11px] text-zinc-400">
-                    {cmd.trigger}
-                  </kbd>
-                </span>
+                {terminalCommands.map((cmd, i) => (
+                  <motion.div
+                    key={cmd.command}
+                    variants={tableRowVariants}
+                    initial="hidden"
+                    animate="visible"
+                    transition={{ delay: i * 0.05 }}
+                    className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 px-6 py-5 hover:bg-zinc-800/20 transition-colors"
+                  >
+                    <code className="shrink-0 text-sm font-mono text-emerald-400">
+                      {cmd.command}
+                    </code>
+                    <span className="text-sm text-zinc-400">
+                      {cmd.description}
+                    </span>
+                  </motion.div>
+                ))}
               </motion.div>
-            ))}
-          </div>
+            ) : (
+              <motion.div
+                key="slash"
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.2 }}
+                className="divide-y divide-zinc-800/40"
+              >
+                {slashCommands.map((cmd, i) => (
+                  <motion.div
+                    key={cmd.command}
+                    variants={tableRowVariants}
+                    initial="hidden"
+                    animate="visible"
+                    transition={{ delay: i * 0.04 }}
+                    className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 px-6 py-5 hover:bg-zinc-800/20 transition-colors"
+                  >
+                    <code className="shrink-0 min-w-[140px] text-sm font-mono text-emerald-400">
+                      {cmd.command}
+                    </code>
+                    <span className="flex-1 text-sm text-zinc-400">
+                      {cmd.description}
+                    </span>
+                    <span className="shrink-0 inline-flex items-center gap-1.5 text-xs text-zinc-500">
+                      <kbd className="rounded border border-zinc-700 bg-zinc-800 px-1.5 py-0.5 font-mono text-[11px] text-zinc-400">
+                        {cmd.trigger}
+                      </kbd>
+                    </span>
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       </div>
     </section>
