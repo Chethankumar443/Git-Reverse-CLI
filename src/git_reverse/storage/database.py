@@ -210,9 +210,7 @@ class Database:
         )
         await self.conn.commit()
 
-        async with self.conn.execute(
-            "SELECT version FROM schema_migrations"
-        ) as cursor:
+        async with self.conn.execute("SELECT version FROM schema_migrations") as cursor:
             applied: set[int] = {row[0] for row in await cursor.fetchall()}
 
         migration_files = sorted(_MIGRATIONS_DIR.glob("*.sql"))
@@ -258,10 +256,17 @@ class RepositoryDAO:
                     metadata          = excluded.metadata
                 """,
                 (
-                    repo.id, repo.url, repo.name, repo.local_path,
-                    repo.primary_language, repo.size_bytes, repo.cloned_at,
-                    repo.last_analyzed_at, repo.analysis_status,
-                    repo.error_message, meta_json,
+                    repo.id,
+                    repo.url,
+                    repo.name,
+                    repo.local_path,
+                    repo.primary_language,
+                    repo.size_bytes,
+                    repo.cloned_at,
+                    repo.last_analyzed_at,
+                    repo.analysis_status,
+                    repo.error_message,
+                    meta_json,
                 ),
             )
             await self._db.conn.commit()
@@ -305,9 +310,7 @@ class RepositoryDAO:
         except sqlite3.Error as exc:
             raise DatabaseError("list_repositories", str(exc)) from exc
 
-    async def update_status(
-        self, repo_id: str, status: str, *, error: str | None = None
-    ) -> None:
+    async def update_status(self, repo_id: str, status: str, *, error: str | None = None) -> None:
         """Update analysis_status and optionally set an error message."""
         try:
             await self._db.conn.execute(

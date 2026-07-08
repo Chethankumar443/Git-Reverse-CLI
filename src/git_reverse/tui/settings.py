@@ -50,6 +50,8 @@ class SettingsScreen(ModalScreen[None]):
                     id="github-token",
                 )
 
+            yield Label("", id="settings-status")
+
             with Container(id="buttons-row"):
                 yield Button("Cancel", id="cancel-btn")
                 yield Button("Save", id="save-btn", classes="primary")
@@ -68,7 +70,7 @@ class SettingsScreen(ModalScreen[None]):
         gh_token = self.query_one("#github-token", Input).value.strip()
 
         if not username:
-            self.app.notify("Username cannot be empty.", severity="error")
+            self.query_one("#settings-status", Label).update("Username cannot be empty.")
             return
 
         try:

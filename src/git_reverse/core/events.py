@@ -129,9 +129,7 @@ class EventBus:
 
         def decorator(handler: AsyncHandler) -> AsyncHandler:
             if not inspect.iscoroutinefunction(handler):
-                raise TypeError(
-                    f"Event handler '{handler.__name__}' must be an async function."
-                )
+                raise TypeError(f"Event handler '{handler.__name__}' must be an async function.")
             self._handlers[event_type].append(handler)
             log.debug(
                 "handler_registered",
@@ -151,9 +149,7 @@ class EventBus:
             handler: An async callable accepting a single event argument.
         """
         if not inspect.iscoroutinefunction(handler):
-            raise TypeError(
-                f"Event handler '{handler.__name__}' must be an async function."
-            )
+            raise TypeError(f"Event handler '{handler.__name__}' must be an async function.")
         self._handlers[event_type].append(handler)
 
     def unsubscribe(self, event_type: type[EventT], handler: AsyncHandler) -> None:

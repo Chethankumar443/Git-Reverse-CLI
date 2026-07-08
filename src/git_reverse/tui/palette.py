@@ -27,6 +27,7 @@ _COMMANDS = [
 
 class CommandListItem(ListItem):
     """ListItem representing a command with type-safe cmd_name attribute."""
+
     cmd_name: str
 
 
@@ -55,9 +56,7 @@ class CommandPalette(ModalScreen[str]):
             if not normalized or normalized in cmd or normalized in desc.lower():
                 # Single label: name padded to align with description
                 padded_name = cmd.ljust(16)
-                item = CommandListItem(
-                    Label(f"{padded_name}  {desc}", classes="palette-item")
-                )
+                item = CommandListItem(Label(f"{padded_name}  {desc}", classes="palette-item"))
                 item.cmd_name = cmd
                 list_view.append(item)
 

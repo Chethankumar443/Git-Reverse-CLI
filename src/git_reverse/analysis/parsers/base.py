@@ -35,19 +35,19 @@ class ParsedSymbol:
     """
 
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    type: str = ""           # "function" | "class" | "import" | "module" | "struct" | "trait"
+    type: str = ""  # "function" | "class" | "import" | "module" | "struct" | "trait"
     name: str = ""
     language: str = ""
     file_path: str = ""
     start_line: int = 0
     end_line: int = 0
-    content: str = ""        # The raw source text of this symbol
+    content: str = ""  # The raw source text of this symbol
     metadata: dict[str, Any] = field(default_factory=dict)
 
     # Relationship data — resolved into edges by KnowledgeGraphBuilder
-    calls: list[str] = field(default_factory=list)     # names of called functions
-    imports: list[str] = field(default_factory=list)   # imported module names
-    bases: list[str] = field(default_factory=list)     # parent classes
+    calls: list[str] = field(default_factory=list)  # names of called functions
+    imports: list[str] = field(default_factory=list)  # imported module names
+    bases: list[str] = field(default_factory=list)  # parent classes
     decorators: list[str] = field(default_factory=list)
 
 
@@ -161,7 +161,7 @@ class BaseParser(ABC):
     @staticmethod
     def _node_text(node: Node, source: bytes) -> str:
         """Return the UTF-8 decoded source text of an AST node."""
-        return source[node.start_byte:node.end_byte].decode("utf-8", errors="replace")
+        return source[node.start_byte : node.end_byte].decode("utf-8", errors="replace")
 
     @staticmethod
     def _find_first(node: Node, *type_names: str) -> Node | None:

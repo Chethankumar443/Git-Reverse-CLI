@@ -109,7 +109,7 @@ def tui(session_id: str | None) -> None:
         pass
     finally:
         if app and app.active_session_id:
-            timestamp = time.strftime('%Y-%m-%dT%H:%M:%S.000Z', time.gmtime())
+            timestamp = time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
             print_exit_banner(app.active_session_id, timestamp)
 
 
@@ -160,6 +160,7 @@ def analyze(
 
             # Register repo in DB
             from git_reverse.storage.database import Repository
+
             repo_id = str(uuid.uuid4())
             name = url_or_path.rstrip("/").split("/")[-1].replace(".git", "")
             await repo_dao.upsert(
@@ -173,9 +174,7 @@ def analyze(
             ) as progress:
                 # Clone
                 task = progress.add_task("Cloning repository…", total=None)
-                local_path = await cloner.clone(
-                    url_or_path, repo_id=repo_id, force_reclone=force
-                )
+                local_path = await cloner.clone(url_or_path, repo_id=repo_id, force_reclone=force)
                 progress.update(task, description="✓ Clone complete", completed=1, total=1)
 
                 # Validate
@@ -186,6 +185,7 @@ def analyze(
                 # Run AST Analysis Pipeline
                 task3 = progress.add_task("Analyzing codebase AST & Dependency Graph…", total=None)
                 from git_reverse.analysis.pipeline import AnalysisPipeline
+
                 pipeline = AnalysisPipeline(db=db, max_workers=settings.effective_workers)
                 await pipeline.run(repo_id=repo_id, validation_result=result)
                 progress.update(task3, description="✓ Analysis complete", completed=1, total=1)
@@ -215,6 +215,7 @@ def analyze(
 
             if output:
                 import json
+
                 out = {
                     "repo": name,
                     "url": url_or_path,
@@ -321,7 +322,7 @@ def doctor() -> None:
 
     # Disk space
     _total, _used, free = shutil.disk_usage(settings.data_dir)
-    free_gb = free / (1024 ** 3)
+    free_gb = free / (1024**3)
     if free_gb >= 5:
         ok("Disk space", f"{free_gb:.1f} GB free")
     elif free_gb >= 1:
@@ -334,10 +335,20 @@ def doctor() -> None:
 
 # ── Config Command ────────────────────────────────────────────────────────────
 @cli.command("config")
-@click.option("--set-key", "openrouter_key", default=None, metavar="KEY",
-              help="Store an OpenRouter API key in the OS keychain.")
-@click.option("--set-github-token", "github_token", default=None, metavar="TOKEN",
-              help="Store a GitHub API token in the OS keychain.")
+@click.option(
+    "--set-key",
+    "openrouter_key",
+    default=None,
+    metavar="KEY",
+    help="Store an OpenRouter API key in the OS keychain.",
+)
+@click.option(
+    "--set-github-token",
+    "github_token",
+    default=None,
+    metavar="TOKEN",
+    help="Store a GitHub API token in the OS keychain.",
+)
 @click.option("--show", is_flag=True, default=False, help="Print current config (no secrets).")
 def config(openrouter_key: str | None, github_token: str | None, show: bool) -> None:
     """View or update configuration values."""

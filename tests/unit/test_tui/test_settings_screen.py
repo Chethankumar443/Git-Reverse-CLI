@@ -13,6 +13,7 @@ from git_reverse.tui.settings import SettingsScreen
 @pytest.mark.asyncio
 async def test_settings_screen_loads(settings: AppSettings) -> None:
     """Verify that SettingsScreen can mount and displays initial values."""
+
     class TestApp(App[None]):
         def compose(self):
             # yield settings screen on start for testing
@@ -25,6 +26,7 @@ async def test_settings_screen_loads(settings: AppSettings) -> None:
 
         # Verify inputs populated
         from textual.widgets import Input
+
         model_input = screen.query_one("#default-model", Input)
         assert model_input.value == settings.default_model
 

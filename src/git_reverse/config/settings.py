@@ -146,8 +146,10 @@ class AppSettings(BaseSettings):
         config_path = _default_data_dir() / "config.json"
         if config_path.exists():
             import contextlib
+
             with contextlib.suppress(Exception):
                 import json
+
                 saved = json.loads(config_path.read_text(encoding="utf-8"))
                 for key, val in saved.items():
                     if key not in data or data[key] is None or data[key] == "":
@@ -165,6 +167,7 @@ class AppSettings(BaseSettings):
     def save_settings(self) -> None:
         """Persist non-sensitive configuration settings to config.json."""
         import json
+
         config_path = self.data_dir / "config.json"
         data = {
             "username": self.username,

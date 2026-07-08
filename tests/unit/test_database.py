@@ -25,8 +25,8 @@ class TestGenerateSessionId:
         assert sid.startswith("GR-")
         parts = sid.split("-")
         assert len(parts) == 3
-        assert len(parts[1]) == 8   # YYYYMMDD
-        assert len(parts[2]) == 6   # hex suffix
+        assert len(parts[1]) == 8  # YYYYMMDD
+        assert len(parts[2]) == 6  # hex suffix
 
     def test_uniqueness(self) -> None:
         ids = {generate_session_id() for _ in range(100)}
@@ -47,9 +47,7 @@ class TestDatabase:
 
     async def test_migrations_are_idempotent(self, db: Database) -> None:
         """Connecting to an already-migrated DB must not raise or duplicate rows."""
-        async with db.conn.execute(
-            "SELECT COUNT(*) FROM schema_migrations"
-        ) as cursor:
+        async with db.conn.execute("SELECT COUNT(*) FROM schema_migrations") as cursor:
             row = await cursor.fetchone()
         assert row is not None
         count_before = row[0]
@@ -59,9 +57,7 @@ class TestDatabase:
         await db2.connect()
         await db2.close()
 
-        async with db.conn.execute(
-            "SELECT COUNT(*) FROM schema_migrations"
-        ) as cursor:
+        async with db.conn.execute("SELECT COUNT(*) FROM schema_migrations") as cursor:
             row = await cursor.fetchone()
         assert row is not None
         assert row[0] == count_before

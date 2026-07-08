@@ -111,6 +111,7 @@ class AnalysisView(Vertical):
             "failed": "✕ ",
         }
         import contextlib
+
         with contextlib.suppress(Exception):
             label = self.query_one(f"#stage-{stage_id}", Label)
             classes = f"stage-item {status}"
@@ -125,6 +126,7 @@ class AnalysisView(Vertical):
 
 class SessionListItem(ListItem):
     """ListItem representing a session in the sidebar with type-safe session_id attribute."""
+
     session_id: str
 
 
@@ -191,15 +193,26 @@ class MainPanel(Vertical):
 
 # ── Status Bar ────────────────────────────────────────────────────────────────
 class StatusBar(Static):
-    """One-line status bar showing active context."""
+    """One-line status bar showing active context and transient messages."""
 
     repo_name: reactive[str] = reactive("no repository")
     model_name: reactive[str] = reactive("—")
     session_id: reactive[str] = reactive("—")
+    message: reactive[str] = reactive("")
 
     def render(self) -> str:
+        if self.message:
+            return f"  [bold cyan]▶ {self.message}[/]"
         sep = "  ·  "
         return f"  [bold]{self.repo_name}[/]{sep}{self.model_name}{sep}{self.session_id}"
+
+    def watch_message(self, message: str) -> None:
+        """Clear temporary status message after 3 seconds."""
+        if message:
+            self.set_timer(3.0, self.clear_message)
+
+    def clear_message(self) -> None:
+        self.message = ""
 
 
 # ── The Application ───────────────────────────────────────────────────────────
@@ -237,6 +250,21 @@ class GitReverseApp(App[None]):
         self._repo_dao = RepositoryDAO(db)
         self.active_session_id: str | None = None
         self._initial_session_id = initial_session_id
+
+    def notify(
+        self,
+        message: str,
+        *,
+        title: str = "",
+        severity: str = "information",
+        timeout: float = 3.0,
+    ) -> None:
+        """Override standard notify to display in status bar instead of popup toast."""
+        try:
+            status = self.query_one(StatusBar)
+            status.message = message
+        except Exception:
+            super().notify(message, title=title, severity=severity, timeout=timeout)
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -296,9 +324,9 @@ class GitReverseApp(App[None]):
         analysis = self.query_one(AnalysisView)
         chat = self.query_one(ChatPane)
 
-        home.display = (view_name == "home")
-        analysis.display = (view_name == "analysis")
-        chat.display = (view_name == "chat")
+        home.display = view_name == "home"
+        analysis.display = view_name == "analysis"
+        chat.display = view_name == "chat"
 
         # Hide log container by default when switching to analysis view
         if view_name == "analysis":
@@ -318,12 +346,14 @@ class GitReverseApp(App[None]):
         cached_ids: set[str] = set()
         if cache_file.exists():
             import contextlib
+
             with contextlib.suppress(Exception):
                 cached_ids = set(json.loads(cache_file.read_text(encoding="utf-8")))
 
         url = "https://openrouter.ai/api/v1/models"
         headers = {"Authorization": f"Bearer {key}"}
         import contextlib
+
         with contextlib.suppress(Exception):
             async with httpx.AsyncClient() as client:
                 res = await client.get(url, headers=headers, timeout=10.0)
@@ -349,7 +379,7 @@ class GitReverseApp(App[None]):
                     self.notify(
                         f"New free model launched: {new_m}! Check it out in settings.",
                         title="New Model Available",
-                        severity="information"
+                        severity="information",
                     )
 
     async def _load_recent_sessions(self) -> None:
@@ -600,6 +630,7 @@ class GitReverseApp(App[None]):
     def key_l(self) -> None:
         """Toggle detailed analysis logs on 'L' keypress."""
         import contextlib
+
         with contextlib.suppress(Exception):
             analysis_view = self.query_one(AnalysisView)
             if analysis_view.display:

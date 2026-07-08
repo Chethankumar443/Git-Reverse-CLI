@@ -34,18 +34,53 @@ log = get_logger(__name__)
 _BINARY_EXTENSIONS: frozenset[str] = frozenset(
     {
         # Images
-        ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg", ".ico", ".webp", ".tiff",
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".gif",
+        ".bmp",
+        ".svg",
+        ".ico",
+        ".webp",
+        ".tiff",
         # Video / Audio
-        ".mp4", ".mov", ".avi", ".mkv", ".mp3", ".wav", ".ogg",
+        ".mp4",
+        ".mov",
+        ".avi",
+        ".mkv",
+        ".mp3",
+        ".wav",
+        ".ogg",
         # Archives
-        ".zip", ".tar", ".gz", ".bz2", ".xz", ".7z", ".rar",
+        ".zip",
+        ".tar",
+        ".gz",
+        ".bz2",
+        ".xz",
+        ".7z",
+        ".rar",
         # Compiled / binary
-        ".exe", ".dll", ".so", ".dylib", ".class", ".pyc", ".pyo",
-        ".wasm", ".bin", ".o", ".a",
+        ".exe",
+        ".dll",
+        ".so",
+        ".dylib",
+        ".class",
+        ".pyc",
+        ".pyo",
+        ".wasm",
+        ".bin",
+        ".o",
+        ".a",
         # Documents
-        ".pdf", ".docx", ".xlsx", ".pptx",
+        ".pdf",
+        ".docx",
+        ".xlsx",
+        ".pptx",
         # Fonts
-        ".ttf", ".otf", ".woff", ".woff2",
+        ".ttf",
+        ".otf",
+        ".woff",
+        ".woff2",
     }
 )
 
@@ -61,8 +96,8 @@ _GENERATED_DIRS: frozenset[str] = frozenset(
         "build",
         ".next",
         ".nuxt",
-        "target",       # Rust
-        "vendor",       # Go
+        "target",  # Rust
+        "vendor",  # Go
         ".venv",
         "venv",
         "env",
@@ -273,8 +308,17 @@ class RepositoryValidator:
                 if suffix in {".md", ".rst", ".txt", ".adoc"}:
                     manifest.doc_files.append(file_path)
                 elif suffix in {
-                    ".toml", ".yaml", ".yml", ".json", ".ini", ".cfg",
-                    ".env", ".conf", ".xml", ".dockerfile", "",
+                    ".toml",
+                    ".yaml",
+                    ".yml",
+                    ".json",
+                    ".ini",
+                    ".cfg",
+                    ".env",
+                    ".conf",
+                    ".xml",
+                    ".dockerfile",
+                    "",
                 } or filename in {"Dockerfile", "Makefile", ".env.example"}:
                     manifest.config_files.append(file_path)
                 else:

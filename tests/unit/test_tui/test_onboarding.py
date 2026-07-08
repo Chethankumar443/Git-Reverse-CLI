@@ -13,6 +13,7 @@ from git_reverse.tui.onboarding import OnboardingScreen
 @pytest.mark.asyncio
 async def test_onboarding_screen_mounts(settings: AppSettings) -> None:
     """Verify that OnboardingScreen can mount and exposes inputs."""
+
     class TestApp(App[None]):
         def compose(self):
             yield Button("Start", id="start-btn")

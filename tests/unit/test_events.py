@@ -74,9 +74,7 @@ class TestEventBus:
         assert results == ["ok"]
         assert event_bus.stats["total_handler_errors"] == 1
 
-    async def test_different_event_types_do_not_cross_trigger(
-        self, event_bus: EventBus
-    ) -> None:
+    async def test_different_event_types_do_not_cross_trigger(self, event_bus: EventBus) -> None:
         ingested_calls: list[str] = []
         language_calls: list[str] = []
 

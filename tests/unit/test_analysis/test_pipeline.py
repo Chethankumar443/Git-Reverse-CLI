@@ -51,6 +51,7 @@ def process_data(x):
     pipeline = AnalysisPipeline(db=db, bus=event_bus)
 
     progress_states = []
+
     async def progress_cb(phase: str, completed: int, total: int, msg: str) -> None:
         progress_states.append(phase)
 
@@ -77,6 +78,7 @@ def process_data(x):
     # Verify complexity metric was populated in node metadata
     fn_node = next(n for n in nodes if n["type"] == "function")
     import json
+
     meta = json.loads(fn_node["metadata"])
     assert "complexity" in meta
     assert meta["complexity"] == 2  # base 1 + "if" branch = 2

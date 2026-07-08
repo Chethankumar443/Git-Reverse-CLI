@@ -38,13 +38,19 @@ def copy_to_clipboard(text: str) -> bool:
     try:
         if sys.platform == "win32":
             process = subprocess.Popen(
-                ["clip"], stdin=subprocess.PIPE, text=True, encoding="utf-8"  # noqa: S607
+                ["clip"],  # noqa: S607
+                stdin=subprocess.PIPE,
+                text=True,
+                encoding="utf-8",
             )
             process.communicate(input=text)
             return True
         elif sys.platform == "darwin":
             process = subprocess.Popen(
-                ["pbcopy"], stdin=subprocess.PIPE, text=True, encoding="utf-8"  # noqa: S607
+                ["pbcopy"],  # noqa: S607
+                stdin=subprocess.PIPE,
+                text=True,
+                encoding="utf-8",
             )
             process.communicate(input=text)
             return True
@@ -120,6 +126,7 @@ class ThinkingPanel(Container):
         step = 1 if target_progress > start else -1
         if start == target_progress:
             import contextlib
+
             with contextlib.suppress(Exception):
                 self.query_one("#thinking-status", Label).update(stage_text)
             return
@@ -132,6 +139,7 @@ class ThinkingPanel(Container):
             bar = "█" * filled + "─" * unfilled
 
             import contextlib
+
             with contextlib.suppress(Exception):
                 self.query_one("#thinking-bar", Label).update(f"{bar} {p}%")
                 self.query_one("#thinking-status", Label).update(stage_text)
@@ -143,6 +151,7 @@ class ChatInput(Input):
 
     class TabPressed(Message):
         """Dispatched when Tab is pressed in the input field."""
+
         def __init__(self, control: ChatInput) -> None:
             super().__init__()
             self._control = control
@@ -205,10 +214,9 @@ class ChatPane(Vertical):
         self._current_mode = mode
         mode_display = mode.replace("_", " ")
         import contextlib
+
         with contextlib.suppress(Exception):
-            self.query_one("#chat-mode-label", Label).update(
-                f"mode: {mode_display}   Tab to cycle"
-            )
+            self.query_one("#chat-mode-label", Label).update(f"mode: {mode_display}   Tab to cycle")
 
         chat_area = self.query_one("#chat-area", ChatArea)
         chat_area.remove_children()
@@ -242,9 +250,7 @@ class ChatPane(Vertical):
                 meta = json.loads(meta_str or "{}")
                 frameworks = meta.get("frameworks", {})
 
-                evidence_list.mount(
-                    Label(f"Repo: [bold]{name}[/bold]", classes="evidence-item")
-                )
+                evidence_list.mount(Label(f"Repo: [bold]{name}[/bold]", classes="evidence-item"))
                 evidence_list.mount(
                     Label(f"Language: {lang or 'Unknown'}", classes="evidence-item")
                 )
@@ -276,6 +282,7 @@ class ChatPane(Vertical):
                             Label("\n[bold]Matched Symbols:[/bold]", classes="evidence-item")
                         )
                         import contextlib
+
                         for _, n_name, n_type, n_path, n_meta_str in matches[:5]:
                             meta_info = ""
                             if n_meta_str:
@@ -328,9 +335,7 @@ class ChatPane(Vertical):
             )
         else:
             mode_display = self._current_mode.replace("_", " ")
-            self.query_one("#chat-mode-label", Label).update(
-                f"mode: {mode_display}   Tab to cycle"
-            )
+            self.query_one("#chat-mode-label", Label).update(f"mode: {mode_display}   Tab to cycle")
 
     @on(Input.Submitted, "#chat-input")
     async def on_query_submitted(self, event: Input.Submitted) -> None:
@@ -361,9 +366,9 @@ class ChatPane(Vertical):
         chat_area = self.query_one("#chat-area", ChatArea)
         chat_area.mount(UserMessageWidget(query))
 
-        # Mount the thinking panel stages
+        # Mount the thinking panel stages below the input section
         think_panel = ThinkingPanel()
-        chat_area.mount(think_panel)
+        await self.query_one("#chat-main-area").mount(think_panel)
         chat_area.scroll_end()
 
         # Populate evidence panel asynchronously
@@ -468,6 +473,7 @@ class ChatPane(Vertical):
             log.error("query_execution_failed", error=str(exc))
             # Clean up thinking panel if it still exists
             import contextlib
+
             with contextlib.suppress(Exception):
                 await think_panel.remove()
 
@@ -479,7 +485,6 @@ class ChatPane(Vertical):
             input_widget.disabled = False
             input_widget.focus()
 
-
     def _cycle_mode(self) -> None:
         modes = ["explore", "prompt_recreation", "non-technical", "intermediate", "developer"]
         try:
@@ -490,15 +495,14 @@ class ChatPane(Vertical):
 
         self._current_mode = next_mode
         mode_display = next_mode.replace("_", " ")
-        self.query_one("#chat-mode-label", Label).update(
-            f"mode: {mode_display}   Tab to cycle"
-        )
+        self.query_one("#chat-mode-label", Label).update(f"mode: {mode_display}   Tab to cycle")
         self.run_worker(self._update_session_mode(next_mode))
 
     async def _update_session_mode(self, mode: str) -> None:
         if self.session_id:
             try:
                 from git_reverse.storage.database import SessionDAO
+
                 session_dao = SessionDAO(self._db)
                 await session_dao.update_mode(self.session_id, mode)
                 self.app.notify(
@@ -520,32 +524,26 @@ class ChatPane(Vertical):
 
         elif cmd in ("/compact", "/summarize"):
             chat_area.mount(UserMessageWidget(f"Command: {cmd_str}"))
-            # Mount thinking panel first
+            # Mount thinking panel first below input
             think_panel = ThinkingPanel()
-            chat_area.mount(think_panel)
+            await self.query_one("#chat-main-area").mount(think_panel)
             chat_area.scroll_end()
             self._run_query_worker(
-                "Please generate a compact summary of this conversation.",
-                think_panel,
-                input_widget
+                "Please generate a compact summary of this conversation.", think_panel, input_widget
             )
 
         elif cmd == "/deep_dive":
             chat_area.mount(UserMessageWidget(f"Command: {cmd_str}"))
-            # Mount thinking panel first
+            # Mount thinking panel first below input
             think_panel = ThinkingPanel()
-            chat_area.mount(think_panel)
+            await self.query_one("#chat-main-area").mount(think_panel)
             chat_area.scroll_end()
             prompt = (
                 "Generate a highly structured blueprint prompt detailing the "
                 "folder structure, AST architecture, schemas, and logic of "
                 "this codebase so that a developer can recreate it from scratch."
             )
-            self._run_query_worker(
-                prompt,
-                think_panel,
-                input_widget
-            )
+            self._run_query_worker(prompt, think_panel, input_widget)
 
         elif cmd == "/section":
             chat_area.mount(UserMessageWidget(f"Command: {cmd_str}"))
@@ -555,6 +553,7 @@ class ChatPane(Vertical):
 
             try:
                 from git_reverse.storage.database import SessionDAO
+
                 session_dao = SessionDAO(self._db)
                 sessions = await session_dao.list_recent(limit=10)
                 md = "### Recent Sessions:\n\n"

@@ -19,6 +19,7 @@ from git_reverse.config.settings import AppSettings
 
 class OnboardingListItem(ListItem):
     """ListItem representing a model with type-safe attributes."""
+
     model_id: str
 
 

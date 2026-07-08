@@ -73,8 +73,7 @@ class OpenRouterClient:
                             body=error_msg,
                         )
                         raise LLMError(
-                            f"OpenRouter API error (HTTP {response.status_code}): "
-                            f"{error_msg}"
+                            f"OpenRouter API error (HTTP {response.status_code}): {error_msg}"
                         )
 
                     prompt_tokens = 0

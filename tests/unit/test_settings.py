@@ -38,6 +38,7 @@ class TestAppSettings:
 
     def test_invalid_log_level_raises(self, tmp_path: Path) -> None:
         from pydantic import ValidationError
+
         with pytest.raises(ValidationError):
             AppSettings(
                 data_dir=tmp_path / "d",
@@ -64,6 +65,7 @@ class TestAppSettings:
 
     def test_analysis_workers_max_limit(self, tmp_path: Path) -> None:
         from pydantic import ValidationError
+
         with pytest.raises(ValidationError):
             AppSettings.model_validate(
                 {
@@ -77,6 +79,7 @@ class TestAppSettings:
         self, settings: AppSettings, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         import keyring
+
         monkeypatch.setattr(keyring, "get_password", lambda service, username: None)
         # No key configured in the fixture
         assert not settings.has_openrouter_key()
@@ -94,6 +97,7 @@ class TestAppSettings:
         """Verify that save_settings() saves to json, and AppSettings loads it."""
         # Mock _default_data_dir to point to tmp_path
         from git_reverse.config import settings
+
         monkeypatch.setattr(settings, "_default_data_dir", lambda: tmp_path)
 
         s1 = AppSettings(data_dir=tmp_path, cache_dir=tmp_path / "c")

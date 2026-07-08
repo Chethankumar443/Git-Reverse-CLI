@@ -30,9 +30,19 @@ class ComplexityScorer:
 
         # Word boundaries matching conditional constructs
         import re
+
         branch_patterns = [
-            r"\bif\b", r"\belif\b", r"\bfor\b", r"\bwhile\b", r"\bexcept\b",
-            r"\bcatch\b", r"\bcase\b", r"&&", r"\|\|", r"\band\b", r"\bor\b"
+            r"\bif\b",
+            r"\belif\b",
+            r"\bfor\b",
+            r"\bwhile\b",
+            r"\bexcept\b",
+            r"\bcatch\b",
+            r"\bcase\b",
+            r"&&",
+            r"\|\|",
+            r"\band\b",
+            r"\bor\b",
         ]
 
         for pattern in branch_patterns:

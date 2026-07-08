@@ -188,9 +188,7 @@ class TestRepositoryCloner:
         assert received[0].repo_id == "test-002"
         assert received[0].local_path == repo_path
 
-    async def test_invalid_local_path_raises(
-        self, tmp_path: Path, event_bus: EventBus
-    ) -> None:
+    async def test_invalid_local_path_raises(self, tmp_path: Path, event_bus: EventBus) -> None:
         not_a_repo = tmp_path / "empty"
         not_a_repo.mkdir()
         cloner = RepositoryCloner(

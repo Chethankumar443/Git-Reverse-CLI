@@ -38,6 +38,7 @@ async def test_stream_completion_success(monkeypatch: pytest.MonkeyPatch) -> Non
         return MockResponse()
 
     import httpx
+
     monkeypatch.setattr(httpx.AsyncClient, "stream", mock_stream)
 
     client = OpenRouterClient(api_key="mock_key")

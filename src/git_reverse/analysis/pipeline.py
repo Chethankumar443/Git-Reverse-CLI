@@ -167,13 +167,10 @@ class AnalysisPipeline:
         async with self._db.transaction():
             # Clear old records for this repository if any exist
             delete_edges_sql = (
-                "DELETE FROM edges WHERE source_id IN "
-                "(SELECT id FROM nodes WHERE repo_id = ?)"
+                "DELETE FROM edges WHERE source_id IN (SELECT id FROM nodes WHERE repo_id = ?)"
             )
             await self._db.conn.execute(delete_edges_sql, (repo_id,))
-            await self._db.conn.execute(
-                "DELETE FROM nodes WHERE repo_id = ?", (repo_id,)
-            )
+            await self._db.conn.execute("DELETE FROM nodes WHERE repo_id = ?", (repo_id,))
 
             # Insert Nodes
             node_insert_sql = (
@@ -195,10 +192,12 @@ class AnalysisPipeline:
                 meta_json = "{}"
                 # Filter out base keys from metadata payload
                 meta_filtered = {
-                    k: v for k, v in attrs.items()
+                    k: v
+                    for k, v in attrs.items()
                     if k not in ("type", "name", "file_path", "start_line", "end_line")
                 }
                 import json
+
                 meta_json = json.dumps(meta_filtered)
 
                 await self._db.conn.execute(
@@ -226,9 +225,7 @@ class AnalysisPipeline:
                 await self._db.conn.execute(edge_insert_sql, (u, v, rel, "{}"))
 
         duration = time.monotonic() - start_time
-        event = AnalysisPipelineCompleteEvent(
-            repo_id=repo_id, duration_seconds=duration
-        )
+        event = AnalysisPipelineCompleteEvent(repo_id=repo_id, duration_seconds=duration)
         await self._bus.emit(event)
 
         if progress_callback:
