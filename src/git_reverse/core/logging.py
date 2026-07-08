@@ -62,7 +62,6 @@ def configure_logging(
         dev_mode: If True, use colourised console output instead of JSON.
         log_file: Optional file path to redirect all logs to.
     """
-    from pathlib import Path
     log_level = getattr(logging, level.upper(), logging.INFO)
 
     # Shared processors applied to every log record
