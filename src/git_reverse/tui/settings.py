@@ -24,26 +24,26 @@ class SettingsScreen(ModalScreen[None]):
 
     def compose(self) -> ComposeResult:
         with Container(id="settings-container"):
-            yield Label("Configuration Settings", id="settings-title")
+            yield Label("Settings", id="settings-title")
 
             with Grid(id="settings-grid"):
-                yield Label("Username:")
+                yield Label("Username")
                 yield Input(value=self._settings.username, id="settings-username")
 
-                yield Label("Default Model:")
+                yield Label("Default Model")
                 yield Input(value=self._settings.default_model, id="default-model")
 
-                yield Label("Analysis Workers:")
+                yield Label("Analysis Workers")
                 yield Input(value=str(self._settings.analysis_workers), id="analysis-workers")
 
-                yield Label("OpenRouter API Key:")
+                yield Label("OpenRouter API Key")
                 yield Input(
                     value=self._settings.get_openrouter_key() or "",
                     password=True,
                     id="openrouter-key",
                 )
 
-                yield Label("GitHub API Token:")
+                yield Label("GitHub Token")
                 yield Input(
                     value=self._settings.get_github_token() or "",
                     password=True,
@@ -51,8 +51,8 @@ class SettingsScreen(ModalScreen[None]):
                 )
 
             with Container(id="buttons-row"):
-                yield Button("Cancel", id="cancel-btn", variant="error")
-                yield Button("Save", id="save-btn", variant="success")
+                yield Button("Cancel", id="cancel-btn")
+                yield Button("Save", id="save-btn", classes="primary")
 
     @on(Button.Pressed, "#cancel-btn")
     def on_cancel(self) -> None:
@@ -90,5 +90,5 @@ class SettingsScreen(ModalScreen[None]):
         # 3. Persist updated configuration permanently
         self._settings.save_settings()
 
-        self.app.notify("Settings updated successfully.", severity="success")
+        self.app.notify("Settings updated successfully.", severity="information")
         self.dismiss()

@@ -37,7 +37,12 @@ class JavaScriptParser(BaseParser):
         lang = self._language_name()
 
         # 1. Imports (ES6 imports & requires)
-        for node in self._find_all(root, "import_statement", "lexical_declaration", "variable_declaration"):
+        target_types = (
+            "import_statement",
+            "lexical_declaration",
+            "variable_declaration",
+        )
+        for node in self._find_all(root, *target_types):
             text = self._node_text(node, source)
 
             # Direct ES6 Import: import foo from 'bar'

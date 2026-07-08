@@ -14,17 +14,15 @@ from typing import Any
 import git
 import pytest
 
+from git_reverse.core.events import EventBus, RepositoryIngestedEvent
 from git_reverse.core.exceptions import (
     InvalidRepositoryError,
     RepositoryTooLargeError,
 )
-from git_reverse.core.events import EventBus, RepositoryIngestedEvent
 from git_reverse.ingestion.cloner import RepositoryCloner
 from git_reverse.ingestion.validator import (
-    FileManifest,
-    RepositoryValidator,
-    _BINARY_EXTENSIONS,
     _GENERATED_DIRS,
+    RepositoryValidator,
 )
 
 
@@ -204,7 +202,11 @@ class TestRepositoryCloner:
             await cloner.clone(str(not_a_repo), repo_id="test-003")
 
     async def test_cache_hit_skips_clone(
-        self, make_git_repo: Any, tmp_path: Path, event_bus: EventBus, monkeypatch: pytest.MonkeyPatch
+        self,
+        make_git_repo: Any,
+        tmp_path: Path,
+        event_bus: EventBus,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """
         If the destination directory already exists, the cloner must reuse it

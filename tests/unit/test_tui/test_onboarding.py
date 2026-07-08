@@ -18,15 +18,15 @@ async def test_onboarding_screen_mounts(settings: AppSettings) -> None:
             yield Button("Start", id="start-btn")
 
     app = TestApp()
-    async with app.run_test() as pilot:
+    async with app.run_test():
         screen = OnboardingScreen(settings)
         await app.push_screen(screen)
-        
+
         username_input = screen.query_one("#ob-username", Input)
         assert username_input.value == ""
 
         api_key_input = screen.query_one("#ob-api-key", Input)
         assert api_key_input.value == ""
-        
+
         # Clean dismissal
         await screen.dismiss()

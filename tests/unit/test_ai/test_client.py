@@ -2,18 +2,18 @@
 
 from __future__ import annotations
 
-import json
-import pytest
 from typing import Any
+
+import pytest
 
 from git_reverse.ai.client import OpenRouterClient
 from git_reverse.core.exceptions import LLMError
 
-
 # Simple mock response lines
 _MOCK_STREAM_LINES = [
     'data: {"choices": [{"delta": {"content": "Hello"}}]}',
-    'data: {"choices": [{"delta": {"content": " world"}}], "usage": {"prompt_tokens": 10, "completion_tokens": 5}}',
+    'data: {"choices": [{"delta": {"content": " world"}}], '
+    '"usage": {"prompt_tokens": 10, "completion_tokens": 5}}',
     "data: [DONE]",
 ]
 

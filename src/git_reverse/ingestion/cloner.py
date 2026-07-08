@@ -79,8 +79,9 @@ class _AsyncProgressBridge(RemoteProgress):
         # Schedule the async callback on the main loop from this thread
         coro = self._callback(phase, completed, total, message or phase)
         future = asyncio.run_coroutine_threadsafe(coro, self._loop)
-        # Fire-and-forget; don't block the git thread waiting for the TUI
-        future.add_done_callback(lambda f: f.exception() if f.done() and not f.cancelled() else None)
+        future.add_done_callback(
+            lambda f: f.exception() if f.done() and not f.cancelled() else None
+        )
 
     @staticmethod
     def _op_to_phase(op_code: int) -> str:
@@ -237,7 +238,7 @@ class RepositoryCloner:
             RepositoryCloneError: If git reports an error.
         """
         loop = asyncio.get_running_loop()
-        progress = _AsyncProgressBridge(loop, progress_callback) if progress_callback else None
+        progress: Any = _AsyncProgressBridge(loop, progress_callback) if progress_callback else None
 
         def _blocking_clone() -> None:
             try:

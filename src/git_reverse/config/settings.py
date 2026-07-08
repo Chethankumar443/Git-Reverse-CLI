@@ -140,19 +140,18 @@ class AppSettings(BaseSettings):
 
     @model_validator(mode="before")
     @classmethod
-    def load_from_config_json(cls, data: Any) -> Any:
+    def load_from_config_json(cls, data: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(data, dict):
             return data
         config_path = _default_data_dir() / "config.json"
         if config_path.exists():
-            try:
+            import contextlib
+            with contextlib.suppress(Exception):
                 import json
                 saved = json.loads(config_path.read_text(encoding="utf-8"))
                 for key, val in saved.items():
                     if key not in data or data[key] is None or data[key] == "":
                         data[key] = val
-            except Exception:
-                pass
         return data
 
     @model_validator(mode="after")

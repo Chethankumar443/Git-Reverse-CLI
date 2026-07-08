@@ -33,35 +33,35 @@ class OnboardingScreen(ModalScreen[None]):
 
     def compose(self) -> ComposeResult:
         with Container(id="onboarding-container"):
-            yield Label("Welcome to Git Reverse Setup", id="onboarding-title")
+            yield Label("Git Reverse — Setup", id="onboarding-title")
 
             with Grid(id="onboarding-grid"):
-                yield Label("Set Username:")
+                yield Label("Username")
                 yield Input(placeholder="e.g. cheth", id="ob-username")
 
-                yield Label("OpenRouter API Key:\nGet key at openrouter.ai/keys")
+                yield Label("OpenRouter API Key\nopenrouter.ai/keys")
                 yield Input(placeholder="sk-or-v1-...", password=True, id="ob-api-key")
 
-            yield Button("Validate Key & Fetch Free Models", id="validate-btn", variant="primary")
+            yield Button("Validate Key & Fetch Free Models", id="validate-btn", classes="primary")
 
-            yield Label("Select Default Model:", id="model-label")
+            yield Label("Default Model", id="model-label")
             with Container(id="model-selection-box"):
                 yield ListView(id="ob-model-list")
 
             yield Label("", id="onboarding-status")
 
             with Container(id="buttons-row"):
-                yield Button("Save & Complete", id="complete-btn", variant="success", disabled=True)
+                yield Button("Save & Continue", id="complete-btn", classes="primary", disabled=True)
 
     @on(Button.Pressed, "#validate-btn")
     def on_validate(self) -> None:
         """Trigger API key validation worker."""
         key = self.query_one("#ob-api-key", Input).value.strip()
         if not key:
-            self.query_one("#onboarding-status", Label).update("❌ API key cannot be empty.")
+            self.query_one("#onboarding-status", Label).update("API key cannot be empty.")
             return
 
-        self.query_one("#onboarding-status", Label).update("⏳ Validating and fetching models...")
+        self.query_one("#onboarding-status", Label).update("Validating — fetching models...")
         self.query_one("#validate-btn", Button).disabled = True
         self._validate_and_fetch(key)
 
@@ -79,7 +79,7 @@ class OnboardingScreen(ModalScreen[None]):
                 res = await client.get(url, headers=headers, timeout=12.0)
 
             if res.status_code != 200:
-                self._update_status(f"❌ Validation failed (HTTP {res.status_code})")
+                self._update_status(f"Validation failed (HTTP {res.status_code})")
                 return
 
             data = res.json()
@@ -93,15 +93,15 @@ class OnboardingScreen(ModalScreen[None]):
                     free_list.append((m.get("id"), m.get("name") or m.get("id")))
 
             if not free_list:
-                self._update_status("⚠️ Key is valid, but no free-tier models found.")
+                self._update_status("Key valid — no free-tier models found currently.")
                 return
 
             self._free_models = free_list
             self._update_model_list()
-            self._update_status("✅ Key validated! Select a free model below to finish.")
+            self._update_status("Key validated. Select a model below to continue.")
 
         except Exception as exc:
-            self._update_status(f"❌ Network connection failed: {exc}")
+            self._update_status(f"Network error: {exc}")
         finally:
             self._enable_validate_btn()
 
@@ -137,7 +137,7 @@ class OnboardingScreen(ModalScreen[None]):
         api_key = self.query_one("#ob-api-key", Input).value.strip()
 
         if not username:
-            self.query_one("#onboarding-status", Label).update("❌ Username cannot be empty.")
+            self.query_one("#onboarding-status", Label).update("Username cannot be empty.")
             return
 
         if not self._selected_model_id:

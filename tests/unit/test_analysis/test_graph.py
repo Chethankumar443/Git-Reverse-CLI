@@ -42,12 +42,12 @@ def test_build_dependency_graph() -> None:
     )
 
     symbols = [module_sym, class_sym, func_sym, helper_sym]
-    
+
     builder = KnowledgeGraphBuilder()
     graph = builder.build(symbols)
 
     assert graph.number_of_nodes() == 4
-    
+
     # Verify contains (Calculator is inside module, add function is inside Calculator class)
     assert graph.has_edge("mod-1", "class-1")
     assert graph.get_edge_data("mod-1", "class-1")["relation"] == "contains"

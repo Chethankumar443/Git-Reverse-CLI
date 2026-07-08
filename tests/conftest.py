@@ -22,8 +22,6 @@ from git_reverse.core.events import EventBus, reset_event_bus
 from git_reverse.storage.database import Database
 
 
-
-
 # ── Settings ──────────────────────────────────────────────────────────────────
 @pytest.fixture
 def settings(tmp_path: Path) -> AppSettings:

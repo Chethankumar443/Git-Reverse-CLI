@@ -31,7 +31,7 @@ def main():
 
     assert res.success
     assert res.language == "python"
-    
+
     # Verify module name
     assert res.symbols[0].type == "module"
     assert res.symbols[0].name == "test"

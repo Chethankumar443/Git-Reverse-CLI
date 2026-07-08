@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import logging
 import sys
+from pathlib import Path
 from typing import Any
 
 import structlog
@@ -47,14 +48,21 @@ def _drop_color_message_key(
 
 
 # ── Configuration ─────────────────────────────────────────────────────────────
-def configure_logging(level: str = "INFO", *, dev_mode: bool = False) -> None:
+def configure_logging(
+    level: str = "INFO",
+    *,
+    dev_mode: bool = False,
+    log_file: Path | None = None,
+) -> None:
     """
     Configure structlog and stdlib logging for the application.
 
     Args:
         level: Log level string (DEBUG | INFO | WARNING | ERROR).
         dev_mode: If True, use colourised console output instead of JSON.
+        log_file: Optional file path to redirect all logs to.
     """
+    from pathlib import Path
     log_level = getattr(logging, level.upper(), logging.INFO)
 
     # Shared processors applied to every log record
@@ -93,7 +101,12 @@ def configure_logging(level: str = "INFO", *, dev_mode: bool = False) -> None:
         ],
     )
 
-    handler = logging.StreamHandler(sys.stderr)
+    if log_file:
+        log_path = Path(log_file)
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        handler = logging.FileHandler(log_path, encoding="utf-8")
+    else:
+        handler = logging.StreamHandler(sys.stderr)
     handler.setFormatter(formatter)
 
     root_logger = logging.getLogger()

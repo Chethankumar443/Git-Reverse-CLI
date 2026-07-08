@@ -1,40 +1,75 @@
-/* Git Reverse Premium TCSS Stylesheet */
+/*
+ * Git Reverse — Terminal Design System (TDS)
+ *
+ * Philosophy: The interface disappears. The repository is the focus.
+ * Inspired by: Linear, Warp, Claude Desktop, Obsidian, LazyGit
+ *
+ * Rules:
+ *   — One accent color (blue). Everything else is grayscale.
+ *   — No decorative borders. Separation via whitespace.
+ *   — No popups for background work. Progressive disclosure only.
+ *   — One status bar. Nothing else duplicates state.
+ *   — Streaming everywhere. Skeleton states over empty panels.
+ */
 
-/* Color Theme overrides for a high-end Midnight Tech aesthetic */
-$primary: #10b981;          /* Emerald Green */
-$primary-darken-1: #059669;
-$primary-darken-2: #047857;
-$primary-darken-3: #065f46;
+/* ─── Design Tokens ─────────────────────────────────────── */
 
-$accent: #06b6d4;           /* Tech Cyan */
-$accent-lighten-1: #22d3ee;
-$accent-darken-1: #0891b2;
+$background:        #070a13;   /* Deep void — main canvas            */
+$surface:           #0b0e18;   /* Slightly lifted — panels            */
+$surface-alt:       #0e1220;   /* Modal / overlay backgrounds         */
+$border:            #1c2333;   /* Hairline dividers — use sparingly   */
+$border-subtle:     #141824;   /* Near-invisible separators           */
 
-$surface: #0f172a;          /* Slate Dark Background */
-$surface-darken-1: #090d16;
-$surface-darken-2: #05080e;
+$text:              #e2e8f0;   /* Primary readable text               */
+$text-muted:        #475569;   /* Captions, labels, timestamps        */
+$text-dim:          #2d3748;   /* Ghosted / placeholder text          */
 
-$text: #f8fafc;
-$text-muted: #64748b;
-$error: #ef4444;
-$success: #10b981;
-$warning: #f59e0b;
+$accent:            #3b82f6;   /* The ONE accent — blue               */
+$accent-bright:     #60a5fa;   /* Hover / focus variant               */
+$accent-dim:        #1d3a6e;   /* Subtle accent tints                 */
+
+$success:           #10b981;   /* Stage complete / positive feedback  */
+$warning:           #f59e0b;   /* Caution states                      */
+$error:             #ef4444;   /* Pipeline failed / error states      */
+
+/* ─── Screen Foundation ─────────────────────────────────── */
 
 Screen {
-    background: $surface;
+    background: $background;
+    color: $text;
 }
+
+Header {
+    background: $surface;
+    color: $text-muted;
+    text-style: bold;
+    height: 1;
+    border-bottom: solid $border-subtle;
+}
+
+Footer {
+    background: $surface;
+    color: $text-dim;
+    height: 1;
+}
+
+/* ─── Shell Layout ───────────────────────────────────────── */
 
 #body {
     height: 1fr;
+    layout: horizontal;
 }
 
-/* Sidebar styling */
+/* ─── Sidebar ────────────────────────────────────────────── */
+/*  Minimal, collapsed by default on narrow terminals.
+    Uses whitespace for hierarchy — no inner borders.         */
+
 #sidebar {
-    width: 32;
-    min-width: 26;
-    border-right: solid $primary-darken-3;
-    padding: 1 1;
-    background: $surface-darken-1;
+    width: 28;
+    min-width: 0;
+    background: $surface;
+    border-right: solid $border-subtle;
+    padding: 2 2;
     overflow-y: auto;
 }
 
@@ -45,23 +80,29 @@ Screen {
 #sidebar-title {
     color: $accent;
     text-style: bold;
-    padding: 0 0 1 0;
-    border-bottom: solid $primary-darken-3;
-    margin-bottom: 2;
-    text-align: center;
+    margin-bottom: 3;
 }
 
-#session-list-title {
+#session-list-title,
+#file-tree-title {
     color: $text-muted;
     text-style: bold;
+    margin-top: 2;
     margin-bottom: 1;
-    padding-left: 1;
 }
 
-.session-item {
-    padding: 0 1;
-    margin-bottom: 1;
+.session-item,
+.file-item {
+    color: $text;
+    padding: 0 0;
 }
+
+.session-item:hover,
+.file-item:hover {
+    color: $accent-bright;
+}
+
+/* ─── ListView Base ──────────────────────────────────────── */
 
 ListView {
     background: transparent;
@@ -74,157 +115,258 @@ ListView > ListItem {
 }
 
 ListView > ListItem.--highlight {
-    background: $primary-darken-2;
+    background: $accent-dim;
     color: $text;
     text-style: bold;
 }
 
 ListView > ListItem:hover {
-    background: $primary-darken-3;
+    background: $border;
 }
 
-/* Main panel styling */
-#main-panel {
-    padding: 1 3;
-    background: $surface-darken-2;
-    overflow-y: auto;
+/* ─── Main Panel ─────────────────────────────────────────── */
+
+MainPanel {
+    width: 1fr;
+    height: 1fr;
+    background: $background;
 }
+
+/* ─── Home View ──────────────────────────────────────────── */
+/*  Centered, calm, minimal. Inspired by Claude Desktop.
+    One input. Recent sessions. Press / for commands.         */
 
 #welcome-content {
+    align: center middle;
     width: 100%;
-    height: auto;
+    height: 100%;
+    background: $background;
+    padding: 0 8;
 }
 
-/* Bento Welcome Dashboard */
-#dashboard-logo {
-    color: $accent;
+#home-title {
+    color: $text;
     text-style: bold;
-    margin-top: 1;
-    margin-bottom: 0;
+    margin-bottom: 1;
+    text-align: center;
 }
 
-#dashboard-tagline {
+#home-tagline {
     color: $text-muted;
+    margin-bottom: 4;
+    text-align: center;
+}
+
+#home-input-zone {
+    width: 64;
     margin-bottom: 3;
 }
 
-#dashboard-zones {
-    height: auto;
-    margin-bottom: 2;
-}
-
-#left-zone {
-    width: 58%;
-    border: round $primary-darken-2;
-    background: $surface-darken-1;
-    padding: 1 2;
-    margin-right: 2;
-    height: auto;
-}
-
-#right-zone {
-    width: 42%;
-    border: round $primary-darken-2;
-    background: $surface-darken-1;
-    padding: 1 2;
-    height: auto;
-}
-
-.zone-title {
-    color: $primary;
-    text-style: bold;
-    margin-bottom: 1;
-}
-
-#shortcuts-title {
-    margin-top: 2;
-}
-
-.zone-desc {
-    color: $text-muted;
-    margin-bottom: 2;
-}
-
-.status-item {
-    color: $text;
-    margin-bottom: 1;
-}
-
-.shortcut-item {
-    color: $text-muted;
-    margin-bottom: 1;
-}
-
-/* Input Fields */
-Input {
-    border: round $primary-darken-2;
-    background: $surface-darken-2;
-    color: $text;
-    padding: 0 1;
-    margin-bottom: 1;
-}
-
-Input:focus {
-    border: round $accent;
-}
-
-/* Status Bar */
-#status-bar {
-    height: 1;
-    background: $primary-darken-3;
+#repo-input {
+    border: tall $border;
+    background: $surface;
     color: $text;
     padding: 0 2;
+    width: 100%;
+    height: 3;
+}
+
+#repo-input:focus {
+    border: tall $accent;
+}
+
+#repo-input > .input--placeholder {
+    color: $text-dim;
+}
+
+#home-recent-title {
+    color: $text-muted;
+    text-style: bold;
+    margin-bottom: 1;
+    text-align: center;
+}
+
+#home-recent-list {
+    width: 64;
+    height: 10;
+    background: transparent;
+}
+
+#home-hint {
+    color: $text-dim;
+    margin-top: 3;
+    text-align: center;
+}
+
+/* ─── Analysis / Ingestion View ──────────────────────────── */
+/*  Single focus screen. No sidebar clutter.
+    Checklist over percentage-only progress.                  */
+
+#analysis-view {
+    align: center middle;
+    width: 100%;
+    height: 100%;
+    padding: 0 8;
+    background: $background;
+}
+
+#analysis-repo-name {
+    color: $text-muted;
+    margin-bottom: 1;
+    text-align: center;
+}
+
+#analysis-title {
+    color: $text;
+    text-style: bold;
+    margin-bottom: 2;
+    text-align: center;
+}
+
+#analysis-progress-bar {
+    width: 56;
+    height: 1;
+    background: $border;
+    color: $accent;
+    margin-bottom: 3;
+}
+
+ProgressBar > .bar--bar {
+    color: $accent;
+}
+
+ProgressBar > .bar--complete {
+    color: $success;
+}
+
+#analysis-pipeline-stages {
+    width: 56;
+    margin-bottom: 2;
+}
+
+/* Stage states — functional motion only */
+
+.stage-item {
+    color: $text-muted;
+    margin-bottom: 1;
+}
+
+.stage-item.complete {
+    color: $success;
+}
+
+.stage-item.running {
+    color: $accent-bright;
     text-style: bold;
 }
 
-/* Chat Pane and messaging layout */
-ChatPane {
-    height: 1fr;
-    padding: 1;
+.stage-item.pending {
+    color: $text-dim;
 }
 
-ChatArea {
+.stage-item.failed {
+    color: $error;
+}
+
+#analysis-current-task {
+    color: $text-muted;
+    margin-bottom: 2;
+    text-align: center;
+}
+
+#analysis-log-toggle-tip {
+    color: $text-dim;
+    text-align: center;
+    margin-bottom: 1;
+}
+
+#analysis-log-container {
+    width: 72;
+    height: 10;
+    background: $surface;
+    border: solid $border-subtle;
+    padding: 1 2;
+}
+
+.log-item {
+    color: $text-muted;
+}
+
+/* ─── Chat / Workspace ───────────────────────────────────── */
+/*  Almost identical to Claude Desktop.
+    Left: streaming conversation. Right: contextual evidence. */
+
+ChatPane {
     height: 1fr;
-    padding: 1;
-    border: round $primary-darken-2;
-    background: $surface-darken-1;
+    padding: 0 2;
+    background: $background;
+}
+
+#chat-workspace {
+    height: 1fr;
+    layout: horizontal;
+}
+
+#chat-main-area {
+    width: 1fr;
+    height: 1fr;
+    padding-right: 1;
+}
+
+#chat-area {
+    height: 1fr;
+    padding: 1 0;
+    background: transparent;
 }
 
 #chat-input-box {
     margin-top: 1;
+    margin-bottom: 1;
     height: auto;
+    border-top: solid $border-subtle;
+    padding-top: 1;
 }
 
 #chat-mode-label {
-    color: $accent;
-    text-style: bold;
+    color: $text-dim;
     margin-bottom: 1;
-    padding-left: 1;
 }
 
-/* User Message Widget */
+#chat-input {
+    border: tall $border;
+    background: $surface;
+    color: $text;
+    padding: 0 2;
+    height: 3;
+    width: 100%;
+}
+
+#chat-input:focus {
+    border: tall $accent;
+}
+
+/* ─── Message Bubbles ────────────────────────────────────── */
+/*  No background fills. Separation via subtle top border     */
+
 UserMessageWidget {
-    background: $surface-darken-2;
-    border-left: thick $accent;
-    padding: 1 2;
-    margin-bottom: 2;
-    margin-left: 4;
+    background: transparent;
+    padding: 1 0;
+    margin-bottom: 1;
+    border-top: solid $border-subtle;
     height: auto;
 }
 
 .user-label {
-    color: $accent;
+    color: $text-muted;
     text-style: bold;
     margin-bottom: 1;
 }
 
-/* Assistant Message Widget */
 AssistantMessageWidget {
-    background: $surface-darken-1;
-    border-left: thick $primary;
-    padding: 1 2;
-    margin-bottom: 2;
-    margin-right: 4;
+    background: transparent;
+    padding: 1 0;
+    margin-bottom: 1;
+    border-top: solid $border-subtle;
     height: auto;
 }
 
@@ -232,108 +374,225 @@ AssistantMessageWidget {
     layout: horizontal;
     align: left middle;
     margin-bottom: 1;
-    height: 2;
+    height: 1;
 }
 
 .assistant-label {
-    color: $primary;
+    color: $accent;
     text-style: bold;
     width: 1fr;
 }
 
 .copy-btn {
-    min-width: 8;
+    min-width: 6;
     height: 1;
     border: none;
-    background: $primary-darken-2;
-    color: $text;
-    margin-right: 2;
-    text-style: bold;
+    background: transparent;
+    color: $text-muted;
 }
 
 .copy-btn:hover {
-    background: $primary-darken-1;
+    color: $accent-bright;
+    background: transparent;
 }
 
-/* Modal Screens */
-OnboardingScreen, SettingsScreen, CommandPalette {
+/* ─── Thinking Panel ─────────────────────────────────────── */
+/*  Inline, non-blocking. Shows pipeline of AI reasoning
+    stages. Disappears once streaming begins.                 */
+
+#thinking-panel {
+    background: transparent;
+    border-left: solid $accent-dim;
+    padding: 0 2;
+    margin-bottom: 1;
+    height: auto;
+}
+
+#thinking-title {
+    color: $text;
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+#thinking-bar {
+    color: $accent;
+    margin-bottom: 1;
+}
+
+#thinking-status {
+    color: $text-dim;
+    text-style: italic;
+}
+
+/* ─── Evidence Panel ─────────────────────────────────────── */
+/*  Context pane. Auto-hides if no repo loaded.
+    Restrained — muted colors only.                           */
+
+#evidence-panel {
+    width: 36;
+    border-left: solid $border-subtle;
+    background: $surface;
+    padding: 1 2;
+    height: 1fr;
+    overflow-y: auto;
+}
+
+#evidence-title {
+    color: $text-muted;
+    text-style: bold;
+    margin-bottom: 2;
+}
+
+.evidence-item {
+    color: $text-muted;
+    margin-bottom: 1;
+}
+
+.evidence-header {
+    color: $text;
+    margin-bottom: 0;
+}
+
+.evidence-detail {
+    color: $text-dim;
+    margin-bottom: 1;
+}
+
+/* ─── Status Bar ─────────────────────────────────────────── */
+/*  One bar. That's it. Bottom, persistent.                   */
+
+#status-bar {
+    height: 1;
+    background: $surface;
+    color: $text-muted;
+    border-top: solid $border-subtle;
+    padding: 0 2;
+}
+
+/* ─── Modals & Overlays ──────────────────────────────────── */
+/*  Overlays for settings, onboarding, and palette.
+    No dialogs for non-destructive background work.           */
+
+OnboardingScreen,
+SettingsScreen {
     align: center middle;
     background: rgba(0, 0, 0, 0.6);
 }
 
-#onboarding-container, #settings-container, #palette-container {
-    border: round $primary;
-    background: $surface;
-    padding: 1 2;
+CommandPalette {
+    align: center top;
+    background: rgba(0, 0, 0, 0.6);
+    padding-top: 3;
+}
+
+#onboarding-container,
+#settings-container {
+    border: solid $border;
+    background: $surface-alt;
+    padding: 2 4;
 }
 
 #onboarding-container {
-    width: 70;
+    width: 66;
     height: auto;
 }
 
 #settings-container {
-    width: 60;
+    width: 58;
     height: auto;
 }
 
-#palette-container {
-    width: 60;
-    max-height: 24;
-}
-
-#onboarding-title, #settings-title {
-    color: $accent;
+#onboarding-title,
+#settings-title {
+    color: $text;
     text-style: bold;
-    margin-bottom: 1;
-    text-align: center;
+    margin-bottom: 2;
 }
 
-#onboarding-grid, #settings-grid {
+#onboarding-grid,
+#settings-grid {
     grid-size: 2;
     grid-columns: 1fr 2fr;
     grid-gutter: 1;
     margin-bottom: 2;
 }
 
-#onboarding-grid Label, #settings-grid Label {
+#onboarding-grid Label,
+#settings-grid Label {
     padding-top: 1;
     color: $text-muted;
 }
 
 #onboarding-status {
-    color: $accent;
-    margin-bottom: 1;
-    text-align: center;
+    color: $success;
+    margin-bottom: 2;
     text-style: bold;
 }
 
 #model-selection-box {
     height: 8;
-    border: round $primary-darken-2;
-    background: $surface-darken-1;
+    border: solid $border;
+    background: $surface;
     margin-bottom: 2;
 }
 
-/* Button & Dialog layout */
 #buttons-row {
     align: right middle;
+    height: auto;
+    margin-top: 1;
 }
 
 #buttons-row Button {
-    margin-left: 1;
+    margin-left: 2;
+    border: solid $border;
+    background: $surface-alt;
+    color: $text;
 }
 
-/* Command Palette Inner Styling */
-CommandPalette {
-    align: center top;
-    padding-top: 4;
+#buttons-row Button:hover {
+    background: $accent-dim;
+    border: solid $accent;
+    color: $accent-bright;
+}
+
+Button.primary {
+    background: $accent;
+    color: $text;
+    border: solid $accent;
+    text-style: bold;
+}
+
+Button.primary:hover {
+    background: $accent-bright;
+}
+
+/* ─── Command Palette ────────────────────────────────────── */
+/*  Ctrl+P overlay. Fuzzy search. No nested menus.            */
+
+#palette-container {
+    border: solid $border;
+    background: $surface-alt;
+    padding: 1 2;
+    width: 58;
+    max-height: 24;
 }
 
 #palette-input {
-    border: none;
-    margin: 0;
-    background: $surface-darken-1;
+    border: tall $border;
+    background: $surface;
+    margin-bottom: 1;
+    width: 100%;
+    color: $text;
+}
+
+#palette-input:focus {
+    border: tall $accent;
+}
+
+#palette-list {
+    height: auto;
+    max-height: 18;
+    background: transparent;
 }
 
 .palette-item {
@@ -341,11 +600,106 @@ CommandPalette {
 }
 
 .palette-name {
-    color: $accent;
+    color: $text;
     text-style: bold;
 }
 
 .palette-desc {
     color: $text-muted;
-    margin-left: 2;
+}
+
+/* ─── Input Fields (Global) ──────────────────────────────── */
+
+Input {
+    background: $surface;
+    color: $text;
+    border: tall $border;
+}
+
+Input:focus {
+    border: tall $accent;
+}
+
+/* ─── Scrollbars ─────────────────────────────────────────── */
+
+ScrollableContainer {
+    scrollbar-color: $border;
+    scrollbar-color-active: $accent;
+    scrollbar-background: transparent;
+}
+
+/* ─── Notifications / Toasts ─────────────────────────────── */
+/*  Bottom right. Auto-fade. No interruption.                 */
+
+Toast {
+    background: $surface-alt;
+    border: solid $border;
+    color: $text;
+}
+
+Toast.-information {
+    border-left: thick $accent;
+}
+
+Toast.-warning {
+    border-left: thick $warning;
+}
+
+Toast.-error {
+    border-left: thick $error;
+}
+
+/* ─── Empty States ───────────────────────────────────────── */
+/*  Honest, directive prompts — not "No data found"           */
+
+.empty-state {
+    color: $text-dim;
+    text-align: center;
+    padding: 2 4;
+}
+
+/* ─── Error States ───────────────────────────────────────── */
+
+.error-state {
+    color: $error;
+    padding: 1 0;
+}
+
+/* ─── Skeleton Loading ───────────────────────────────────── */
+
+.skeleton {
+    background: $surface;
+    color: $border;
+}
+
+/* ─── Responsive Behavior ────────────────────────────────── */
+/*  Narrow terminals: evidence panel and sidebar collapse.
+    Everything fits in the remaining chat main area.          */
+
+.-narrow #sidebar {
+    display: none;
+}
+
+.-narrow #evidence-panel {
+    display: none;
+}
+
+.-narrow #home-input-zone {
+    width: 95%;
+}
+
+.-narrow #home-recent-list {
+    width: 95%;
+}
+
+.-narrow #analysis-progress-bar {
+    width: 90%;
+}
+
+.-narrow #analysis-pipeline-stages {
+    width: 90%;
+}
+
+.-narrow #analysis-log-container {
+    width: 90%;
 }

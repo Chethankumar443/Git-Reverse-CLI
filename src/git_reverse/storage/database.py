@@ -20,6 +20,7 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from types import TracebackType
 from typing import Any
 
 import aiosqlite
@@ -157,7 +158,12 @@ class Database:
         await self.connect()
         return self
 
-    async def __aexit__(self, *args: Any) -> None:
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         await self.close()
 
     @property
@@ -373,7 +379,9 @@ class SessionDAO:
             raise SessionNotFoundError(session_id)
         return self._row_to_session(row)
 
-    async def list_recent(self, limit: int = 20, *, include_archived: bool = False) -> list[Session]:
+    async def list_recent(
+        self, limit: int = 20, *, include_archived: bool = False
+    ) -> list[Session]:
         """Return the most recently updated sessions."""
         query = "SELECT * FROM sessions"
         params: list[Any] = []
@@ -469,10 +477,11 @@ class MessageDAO:
                 """,
                 (msg.id, msg.session_id, msg.role, msg.content, msg.model, msg.tokens_used),
             )
-            await self._db.conn.execute(
-                "UPDATE sessions SET updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE id = ?",
-                (session_id,),
+            update_sql = (
+                "UPDATE sessions SET updated_at = "
+                "strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE id = ?"
             )
+            await self._db.conn.execute(update_sql, (session_id,))
             await self._db.conn.commit()
         except sqlite3.Error as exc:
             raise DatabaseError("append_message", str(exc)) from exc

@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-from collections.abc import AsyncGenerator
+from typing import Any
 
 import pytest
-
-from typing import Any
 
 from git_reverse.analysis.pipeline import AnalysisPipeline
 from git_reverse.core.events import EventBus
@@ -52,7 +49,7 @@ def process_data(x):
 
     # 3. Execute analysis pipeline
     pipeline = AnalysisPipeline(db=db, bus=event_bus)
-    
+
     progress_states = []
     async def progress_cb(phase: str, completed: int, total: int, msg: str) -> None:
         progress_states.append(phase)
@@ -65,19 +62,20 @@ def process_data(x):
 
     # 4. Verify SQLite databases matches generated assets
     assert "complete" in progress_states
-    
+
     # Query database nodes
-    async with db.conn.execute("SELECT * FROM nodes WHERE repo_id = 'repo-pipeline-test'") as cursor:
+    query_sql = "SELECT * FROM nodes WHERE repo_id = 'repo-pipeline-test'"
+    async with db.conn.execute(query_sql) as cursor:
         nodes = list(await cursor.fetchall())
-    
+
     assert len(nodes) >= 2  # module node + function node
-    
+
     node_types = {n["type"] for n in nodes}
     assert "module" in node_types
     assert "function" in node_types
 
     # Verify complexity metric was populated in node metadata
-    fn_node = [n for n in nodes if n["type"] == "function"][0]
+    fn_node = next(n for n in nodes if n["type"] == "function")
     import json
     meta = json.loads(fn_node["metadata"])
     assert "complexity" in meta

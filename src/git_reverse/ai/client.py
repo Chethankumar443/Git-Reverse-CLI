@@ -67,8 +67,15 @@ class OpenRouterClient:
                     if response.status_code != 200:
                         error_body = await response.aread()
                         error_msg = error_body.decode("utf-8", errors="replace")
-                        log.error("ai_api_error_response", status=response.status_code, body=error_msg)
-                        raise LLMError(f"OpenRouter API error (HTTP {response.status_code}): {error_msg}")
+                        log.error(
+                            "ai_api_error_response",
+                            status=response.status_code,
+                            body=error_msg,
+                        )
+                        raise LLMError(
+                            f"OpenRouter API error (HTTP {response.status_code}): "
+                            f"{error_msg}"
+                        )
 
                     prompt_tokens = 0
                     completion_tokens = 0

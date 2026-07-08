@@ -44,12 +44,29 @@ def print_exit_banner(session_id: str, timestamp: str) -> None:
     print()
 
 
+class DefaultGroup(click.Group):
+    """Custom Click Group that defaults to the 'tui' command for custom arguments."""
+
+    def parse_args(self, ctx: click.Context, args: list[str]) -> list[str]:
+        subcommands = list(self.commands.keys())
+        if (
+            args
+            and args[0] not in subcommands
+            and args[0] not in ("-h", "--help", "-V", "--version")
+        ):
+            args.insert(0, "tui")
+        return super().parse_args(ctx, args)
+
+
 # ── Root Group ────────────────────────────────────────────────────────────────
-@click.group(invoke_without_command=True, context_settings={"help_option_names": ["-h", "--help"]})
+@click.group(
+    cls=DefaultGroup,
+    invoke_without_command=True,
+    context_settings={"help_option_names": ["-h", "--help"]},
+)
 @click.version_option(__version__, "-V", "--version", prog_name="git-reverse")
-@click.argument("args", nargs=-1)
 @click.pass_context
-def cli(ctx: click.Context, args: tuple[str, ...]) -> None:
+def cli(ctx: click.Context) -> None:
     """
     Git Reverse — Repository Intelligence Platform.
 
@@ -57,9 +74,7 @@ def cli(ctx: click.Context, args: tuple[str, ...]) -> None:
     """
     _bootstrap()
     if ctx.invoked_subcommand is None:
-        # No sub-command -> launch TUI, passing session_id if provided in args
-        session_id = args[0] if args else None
-        ctx.invoke(tui, session_id=session_id)
+        ctx.invoke(tui)
 
 
 # ── TUI Command ───────────────────────────────────────────────────────────────
@@ -74,6 +89,13 @@ def tui(session_id: str | None) -> None:
 
     settings = get_settings()
     app = None
+
+    # Redirect logging to file during TUI run to prevent stdout/stderr pollution
+    configure_logging(
+        settings.log_level,
+        dev_mode=settings.dev_mode,
+        log_file=settings.data_dir / "git-reverse.log",
+    )
 
     async def _run() -> None:
         nonlocal app
@@ -169,11 +191,16 @@ def analyze(
                 progress.update(task3, description="✓ Analysis complete", completed=1, total=1)
 
             # Get node/edge count from DB
-            async with db.conn.execute("SELECT COUNT(*) FROM nodes WHERE repo_id = ?", (repo_id,)) as cursor:
+            node_sql = "SELECT COUNT(*) FROM nodes WHERE repo_id = ?"
+            async with db.conn.execute(node_sql, (repo_id,)) as cursor:
                 node_cnt_row = await cursor.fetchone()
             node_cnt = node_cnt_row[0] if node_cnt_row else 0
 
-            async with db.conn.execute("SELECT COUNT(*) FROM edges WHERE source_id IN (SELECT id FROM nodes WHERE repo_id = ?)", (repo_id,)) as cursor:
+            edge_sql = (
+                "SELECT COUNT(*) FROM edges WHERE source_id IN "
+                "(SELECT id FROM nodes WHERE repo_id = ?)"
+            )
+            async with db.conn.execute(edge_sql, (repo_id,)) as cursor:
                 edge_cnt_row = await cursor.fetchone()
             edge_cnt = edge_cnt_row[0] if edge_cnt_row else 0
 
@@ -231,14 +258,27 @@ def doctor() -> None:
     table.add_column("Status")
     table.add_column("Detail")
 
+    supports_unicode = False
+    try:
+        encoding = sys.stdout.encoding or "ascii"
+        "✓".encode(encoding)
+        "✗".encode(encoding)
+        "⚠".encode(encoding)
+        supports_unicode = True
+    except UnicodeEncodeError:
+        pass
+
     def ok(label: str, detail: str = "") -> None:
-        table.add_row(label, "[green]✓ OK[/]", detail)
+        status = "[green]✓ OK[/]" if supports_unicode else "[green]OK[/]"
+        table.add_row(label, status, detail)
 
     def warn(label: str, detail: str = "") -> None:
-        table.add_row(label, "[yellow]⚠ WARN[/]", detail)
+        status = "[yellow]⚠ WARN[/]" if supports_unicode else "[yellow]WARN[/]"
+        table.add_row(label, status, detail)
 
     def fail(label: str, detail: str = "") -> None:
-        table.add_row(label, "[red]✗ FAIL[/]", detail)
+        status = "[red]✗ FAIL[/]" if supports_unicode else "[red]FAIL[/]"
+        table.add_row(label, status, detail)
 
     # Python version
     major, minor = sys.version_info[:2]
@@ -307,13 +347,24 @@ def config(openrouter_key: str | None, github_token: str | None, show: bool) -> 
     settings = get_settings()
     console = Console()
 
+    supports_unicode = False
+    try:
+        encoding = sys.stdout.encoding or "ascii"
+        "✓".encode(encoding)
+        "✗".encode(encoding)
+        supports_unicode = True
+    except UnicodeEncodeError:
+        pass
+
     if openrouter_key:
         settings.save_openrouter_key(openrouter_key)
-        console.print("[green]✓ OpenRouter API key stored securely in OS keychain.[/]")
+        prefix = "✓ " if supports_unicode else ""
+        console.print(f"[green]{prefix}OpenRouter API key stored securely in OS keychain.[/]")
 
     if github_token:
         settings.save_github_token(github_token)
-        console.print("[green]✓ GitHub token stored securely in OS keychain.[/]")
+        prefix = "✓ " if supports_unicode else ""
+        console.print(f"[green]{prefix}GitHub token stored securely in OS keychain.[/]")
 
     if show or (not openrouter_key and not github_token):
         table = Table(title="Current Configuration")
@@ -328,7 +379,13 @@ def config(openrouter_key: str | None, github_token: str | None, show: bool) -> 
         table.add_row("Max repo size", f"{settings.max_repo_size_mb} MB")
         table.add_row("Log level", settings.log_level)
         table.add_row("Dev mode", str(settings.dev_mode))
-        table.add_row("OpenRouter key", "✓ configured" if settings.has_openrouter_key() else "✗ not set")
+        has_key = settings.has_openrouter_key()
+        key_status = (
+            ("✓ configured" if supports_unicode else "configured")
+            if has_key
+            else ("✗ not set" if supports_unicode else "not set")
+        )
+        table.add_row("OpenRouter key", key_status)
         console.print(table)
 
 

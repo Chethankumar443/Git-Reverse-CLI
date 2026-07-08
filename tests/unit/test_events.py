@@ -5,19 +5,17 @@ failure isolation, and singleton management.
 
 from __future__ import annotations
 
-import asyncio
+from pathlib import Path
 
 import pytest
 
 from git_reverse.core.events import (
-    BaseEvent,
     EventBus,
     LanguageDetectedEvent,
     RepositoryIngestedEvent,
     get_event_bus,
     reset_event_bus,
 )
-from pathlib import Path
 
 
 class TestEventBus:

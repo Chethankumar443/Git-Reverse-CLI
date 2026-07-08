@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import pytest
 from textual.app import App
+from textual.widgets import Button
 
 from git_reverse.config.settings import AppSettings
 from git_reverse.tui.settings import SettingsScreen
-from textual.widgets import Button
 
 
 @pytest.mark.asyncio
@@ -19,10 +19,10 @@ async def test_settings_screen_loads(settings: AppSettings) -> None:
             yield Button("Open", id="open-btn")
 
     app = TestApp()
-    async with app.run_test() as pilot:
+    async with app.run_test():
         screen = SettingsScreen(settings)
         await app.push_screen(screen)
-        
+
         # Verify inputs populated
         from textual.widgets import Input
         model_input = screen.query_one("#default-model", Input)
@@ -30,6 +30,6 @@ async def test_settings_screen_loads(settings: AppSettings) -> None:
 
         workers_input = screen.query_one("#analysis-workers", Input)
         assert workers_input.value == str(settings.analysis_workers)
-        
+
         # Dismiss
         await screen.dismiss()

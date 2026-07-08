@@ -166,14 +166,21 @@ class AnalysisPipeline:
         # Write nodes and edges within transaction
         async with self._db.transaction():
             # Clear old records for this repository if any exist
-            await self._db.conn.execute("DELETE FROM edges WHERE source_id IN (SELECT id FROM nodes WHERE repo_id = ?)", (repo_id,))
-            await self._db.conn.execute("DELETE FROM nodes WHERE repo_id = ?", (repo_id,))
+            delete_edges_sql = (
+                "DELETE FROM edges WHERE source_id IN "
+                "(SELECT id FROM nodes WHERE repo_id = ?)"
+            )
+            await self._db.conn.execute(delete_edges_sql, (repo_id,))
+            await self._db.conn.execute(
+                "DELETE FROM nodes WHERE repo_id = ?", (repo_id,)
+            )
 
             # Insert Nodes
-            node_insert_sql = """
-                INSERT INTO nodes (id, repo_id, type, name, file_path, start_line, end_line, content, metadata)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """
+            node_insert_sql = (
+                "INSERT INTO nodes (id, repo_id, type, name, file_path, "
+                "start_line, end_line, content, metadata) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            )
             for node_id, attrs in graph.nodes(data=True):
                 # Resolve content from original symbols list to save database space
                 content_val = next((s.content for s in parsed_symbols if s.id == node_id), None)
@@ -187,13 +194,26 @@ class AnalysisPipeline:
 
                 meta_json = "{}"
                 # Filter out base keys from metadata payload
-                meta_filtered = {k: v for k, v in attrs.items() if k not in ("type", "name", "file_path", "start_line", "end_line")}
+                meta_filtered = {
+                    k: v for k, v in attrs.items()
+                    if k not in ("type", "name", "file_path", "start_line", "end_line")
+                }
                 import json
                 meta_json = json.dumps(meta_filtered)
 
                 await self._db.conn.execute(
                     node_insert_sql,
-                    (node_id, repo_id, node_type, name, file_path, start_line, end_line, content_val, meta_json)
+                    (
+                        node_id,
+                        repo_id,
+                        node_type,
+                        name,
+                        file_path,
+                        start_line,
+                        end_line,
+                        content_val,
+                        meta_json,
+                    ),
                 )
 
             # Insert Edges
@@ -206,7 +226,10 @@ class AnalysisPipeline:
                 await self._db.conn.execute(edge_insert_sql, (u, v, rel, "{}"))
 
         duration = time.monotonic() - start_time
-        await self._bus.emit(AnalysisPipelineCompleteEvent(repo_id=repo_id, duration_seconds=duration))
+        event = AnalysisPipelineCompleteEvent(
+            repo_id=repo_id, duration_seconds=duration
+        )
+        await self._bus.emit(event)
 
         if progress_callback:
             await progress_callback("complete", 100, 100, "Analysis complete.")

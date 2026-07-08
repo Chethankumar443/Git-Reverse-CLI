@@ -7,6 +7,8 @@ and updates SQLite message history and token usage tracking.
 
 from __future__ import annotations
 
+import asyncio
+import json
 import subprocess
 import sys
 import time
@@ -14,7 +16,7 @@ from typing import TYPE_CHECKING
 
 from textual import on, work
 from textual.app import ComposeResult
-from textual.containers import Container, ScrollableContainer, Vertical
+from textual.containers import Container, Horizontal, ScrollableContainer, Vertical
 from textual.message import Message
 from textual.widgets import Button, Input, Label, Markdown
 
@@ -35,18 +37,24 @@ def copy_to_clipboard(text: str) -> bool:
     """Copy string securely to clipboard across Windows, macOS, and Linux."""
     try:
         if sys.platform == "win32":
-            process = subprocess.Popen(['clip'], stdin=subprocess.PIPE, text=True, encoding='utf-8')
+            process = subprocess.Popen(
+                ["clip"], stdin=subprocess.PIPE, text=True, encoding="utf-8"  # noqa: S607
+            )
             process.communicate(input=text)
             return True
         elif sys.platform == "darwin":
-            process = subprocess.Popen(['pbcopy'], stdin=subprocess.PIPE, text=True, encoding='utf-8')
+            process = subprocess.Popen(
+                ["pbcopy"], stdin=subprocess.PIPE, text=True, encoding="utf-8"  # noqa: S607
+            )
             process.communicate(input=text)
             return True
         else:
-            for cmd in ['xclip -selection clipboard', 'xsel -ib']:
+            for cmd in ["xclip -selection clipboard", "xsel -ib"]:
                 try:
                     parts = cmd.split()
-                    process = subprocess.Popen(parts, stdin=subprocess.PIPE, text=True, encoding='utf-8')
+                    process = subprocess.Popen(  # noqa: S603
+                        parts, stdin=subprocess.PIPE, text=True, encoding="utf-8"
+                    )
                     process.communicate(input=text)
                     return True
                 except FileNotFoundError:
@@ -93,6 +101,43 @@ class AssistantMessageWidget(Container):
             self.app.notify("Failed to copy text.", severity="error")
 
 
+class ThinkingPanel(Container):
+    """Inline AI reasoning progress panel. Disappears once streaming starts."""
+
+    def __init__(self) -> None:
+        super().__init__(id="thinking-panel")
+        self.progress = 0
+        self.current_stage = "Initializing analysis..."
+
+    def compose(self) -> ComposeResult:
+        yield Label("Repository Analysis", id="thinking-title")
+        yield Label("────────────────────────────── 0%", id="thinking-bar")
+        yield Label("Initializing analysis...", id="thinking-status")
+
+    async def animate_progress(self, target_progress: int, stage_text: str) -> None:
+        """Smoothly animate progress to target value."""
+        start = self.progress
+        step = 1 if target_progress > start else -1
+        if start == target_progress:
+            import contextlib
+            with contextlib.suppress(Exception):
+                self.query_one("#thinking-status", Label).update(stage_text)
+            return
+
+        for p in range(start, target_progress + step, step):
+            self.progress = p
+            total_blocks = 30
+            filled = int(total_blocks * (p / 100))
+            unfilled = total_blocks - filled
+            bar = "█" * filled + "─" * unfilled
+
+            import contextlib
+            with contextlib.suppress(Exception):
+                self.query_one("#thinking-bar", Label).update(f"{bar} {p}%")
+                self.query_one("#thinking-status", Label).update(stage_text)
+            await asyncio.sleep(0.01)
+
+
 class ChatInput(Input):
     """Custom input to intercept Tab key events to cycle modes."""
 
@@ -132,21 +177,122 @@ class ChatPane(Vertical):
         self.repo_id: str | None = None
         self._current_mode = "explore"
 
-    def compose(self) -> ComposeResult:
-        yield ChatArea(id="chat-area")
-        with Container(id="chat-input-box"):
-            yield Label("Mode: explore  (Press Tab to cycle)", id="chat-mode-label")
-            yield ChatInput(placeholder="Ask a question about this repository...", id="chat-input")
+    def update_model(self, model: str) -> None:
+        """Update the active LLM model. Called when settings change."""
+        self._default_model = model
+        self._client = OpenRouterClient(self._api_key, model)
 
-    def set_session(self, session_id: str, repo_id: str | None) -> None:
+    def compose(self) -> ComposeResult:
+        with Horizontal(id="chat-workspace"):
+            with Vertical(id="chat-main-area"):
+                yield ChatArea(id="chat-area")
+                with Container(id="chat-input-box"):
+                    yield Label("", id="chat-mode-label")
+                    yield ChatInput(
+                        placeholder="Ask a question about this repository...",
+                        id="chat-input",
+                    )
+            with ScrollableContainer(id="evidence-panel"):
+                yield Label("Context", id="evidence-title")
+                yield Container(id="evidence-list")
+
+    def set_session(self, session_id: str, repo_id: str | None, mode: str = "explore") -> None:
         """Switch the current chat context to a new session."""
         self.session_id = session_id
         self.repo_id = repo_id
 
+        # Restore session mode
+        self._current_mode = mode
+        mode_display = mode.replace("_", " ")
+        import contextlib
+        with contextlib.suppress(Exception):
+            self.query_one("#chat-mode-label", Label).update(
+                f"mode: {mode_display}   Tab to cycle"
+            )
+
         chat_area = self.query_one("#chat-area", ChatArea)
         chat_area.remove_children()
 
+        # Call the @work-decorated method directly
         self._load_message_history()
+
+        # Populate initial evidence
+        self.run_worker(self._populate_evidence(""))
+
+    async def _populate_evidence(self, query: str) -> None:
+        """Populate right side evidence panel with metadata and ranked nodes."""
+        repo_id = self.repo_id
+        if not repo_id:
+            self.query_one("#evidence-panel").display = False
+            return
+
+        self.query_one("#evidence-panel").display = True
+        evidence_list = self.query_one("#evidence-list", Container)
+        evidence_list.remove_children()
+
+        try:
+            # 1. Fetch Repository Info
+            async with self._db.conn.execute(
+                "SELECT name, primary_language, metadata FROM repositories WHERE id = ?", (repo_id,)
+            ) as cursor:
+                row = await cursor.fetchone()
+
+            if row:
+                name, lang, meta_str = row[0], row[1], row[2]
+                meta = json.loads(meta_str or "{}")
+                frameworks = meta.get("frameworks", {})
+
+                evidence_list.mount(
+                    Label(f"Repo: [bold]{name}[/bold]", classes="evidence-item")
+                )
+                evidence_list.mount(
+                    Label(f"Language: {lang or 'Unknown'}", classes="evidence-item")
+                )
+                if frameworks:
+                    f_str = ", ".join(frameworks.keys())
+                    evidence_list.mount(Label(f"Frameworks: {f_str}", classes="evidence-item"))
+
+            # 2. Match symbols if query is provided
+            if query:
+                keywords = [w.lower() for w in query.split() if len(w) > 2]
+                if keywords:
+                    query_sql = (
+                        "SELECT name, type, file_path, metadata "
+                        "FROM nodes WHERE repo_id = ? AND type != 'module'"
+                    )
+                    async with self._db.conn.execute(query_sql, (repo_id,)) as cursor:
+                        rows = await cursor.fetchall()
+
+                    matches = []
+                    for r in rows:
+                        n_name, n_type, n_path, n_meta_str = r[0], r[1], r[2], r[3]
+                        score = sum(10 for kw in keywords if kw in n_name.lower())
+                        if score > 0:
+                            matches.append((score, n_name, n_type, n_path, n_meta_str))
+
+                    matches.sort(key=lambda x: x[0], reverse=True)
+                    if matches:
+                        evidence_list.mount(
+                            Label("\n[bold]Matched Symbols:[/bold]", classes="evidence-item")
+                        )
+                        import contextlib
+                        for _, n_name, n_type, n_path, n_meta_str in matches[:5]:
+                            meta_info = ""
+                            if n_meta_str:
+                                with contextlib.suppress(Exception):
+                                    n_meta = json.loads(n_meta_str)
+                                    complexity = n_meta.get("complexity")
+                                    if complexity is not None:
+                                        meta_info = f" [cyan](complexity: {complexity})[/cyan]"
+                            evidence_list.mount(
+                                Label(
+                                    f"• {n_name} ({n_type}){meta_info}",
+                                    classes="evidence-header",
+                                )
+                            )
+                            evidence_list.mount(Label(f"  {n_path}", classes="evidence-detail"))
+        except Exception as exc:
+            log.error("failed_to_populate_evidence", error=str(exc))
 
     @work(exclusive=True)
     async def _load_message_history(self) -> None:
@@ -174,15 +320,16 @@ class ChatPane(Vertical):
 
     @on(Input.Changed, "#chat-input")
     def on_input_changed(self, event: Input.Changed) -> None:
-        """Show slash commands tooltip when typing /."""
+        """Show slash command hint when typing /."""
         val = event.value.strip()
         if val.startswith("/"):
             self.query_one("#chat-mode-label", Label).update(
-                "Commands: /settings, /compact, /deep_dive, /section"
+                "/settings  /compact  /deep_dive  /section"
             )
         else:
+            mode_display = self._current_mode.replace("_", " ")
             self.query_one("#chat-mode-label", Label).update(
-                f"Mode: {self._current_mode.replace('_', ' ')}  (Press Tab to cycle)"
+                f"mode: {mode_display}   Tab to cycle"
             )
 
     @on(Input.Submitted, "#chat-input")
@@ -208,21 +355,25 @@ class ChatPane(Vertical):
         input_widget = self.query_one("#chat-input", ChatInput)
         self.run_worker(self._submit_query(query, input_widget))
 
-    async def _submit_query(self, query: str, input_widget: ChatInput) -> None:
+    async def _submit_query(self, query: str, input_widget: Input) -> None:
         input_widget.disabled = True
 
         chat_area = self.query_one("#chat-area", ChatArea)
         chat_area.mount(UserMessageWidget(query))
 
-        assistant_widget = AssistantMessageWidget("")
-        chat_area.mount(assistant_widget)
+        # Mount the thinking panel stages
+        think_panel = ThinkingPanel()
+        chat_area.mount(think_panel)
         chat_area.scroll_end()
 
-        self._run_query_worker(query, assistant_widget, input_widget)
+        # Populate evidence panel asynchronously
+        self.run_worker(self._populate_evidence(query))
+
+        self._run_query_worker(query, think_panel, input_widget)
 
     @work(exclusive=True)
     async def _run_query_worker(
-        self, query: str, assistant_widget: AssistantMessageWidget, input_widget: ChatInput
+        self, query: str, think_panel: ThinkingPanel, input_widget: Input
     ) -> None:
         """Asynchronously compiles context, queries OpenRouter, and updates database."""
         session_id = self.session_id
@@ -238,10 +389,22 @@ class ChatPane(Vertical):
             # 1. Save user query to DB
             await self._message_dao.append(session_id=session_id, role="user", content=query)
 
+            # Stage 1: Analyzing Architecture...
+            await think_panel.animate_progress(25, "Analyzing Architecture...")
+
             # 2. Compile ranked repository context
             context_str = ""
             if repo_id:
                 context_str = await self._compiler.compile_context(repo_id, query)
+
+            # Stage 2: Finding Entry Points...
+            await think_panel.animate_progress(50, "Finding Entry Points...")
+
+            # Stage 3: Connecting Dependencies...
+            await think_panel.animate_progress(75, "Connecting Dependencies...")
+
+            # Stage 4: Composing Response...
+            await think_panel.animate_progress(100, "Composing Response...")
 
             # 3. Construct messages payload
             messages = [{"role": "system", "content": _SYSTEM_PROMPT}]
@@ -260,12 +423,22 @@ class ChatPane(Vertical):
             prompt_tokens = 0
             completion_tokens = 0
 
+            chat_area = self.query_one("#chat-area", ChatArea)
+            assistant_widget = AssistantMessageWidget("")
+
+            first_chunk = True
             async for chunk, p_tokens, c_tokens in self._client.stream_completion(
                 messages, model=self._default_model
             ):
+                if first_chunk:
+                    # Remove thinking panel and mount streaming assistant widget
+                    await think_panel.remove()
+                    chat_area.mount(assistant_widget)
+                    first_chunk = False
+
                 response_content += chunk
                 assistant_widget.update_content(response_content)
-                self.query_one("#chat-area", ChatArea).scroll_end(animate=False)
+                chat_area.scroll_end(animate=False)
 
                 if p_tokens > 0:
                     prompt_tokens = p_tokens
@@ -293,10 +466,19 @@ class ChatPane(Vertical):
 
         except Exception as exc:
             log.error("query_execution_failed", error=str(exc))
-            assistant_widget.update_content(f"\n\n*Error: Failed to fetch response. {exc}*")
+            # Clean up thinking panel if it still exists
+            import contextlib
+            with contextlib.suppress(Exception):
+                await think_panel.remove()
+
+            chat_area = self.query_one("#chat-area", ChatArea)
+            err_widget = AssistantMessageWidget(f"\n\n*Error: Failed to fetch response. {exc}*")
+            chat_area.mount(err_widget)
+            chat_area.scroll_end()
         finally:
             input_widget.disabled = False
             input_widget.focus()
+
 
     def _cycle_mode(self) -> None:
         modes = ["explore", "prompt_recreation", "non-technical", "intermediate", "developer"]
@@ -307,8 +489,9 @@ class ChatPane(Vertical):
             next_mode = "explore"
 
         self._current_mode = next_mode
+        mode_display = next_mode.replace("_", " ")
         self.query_one("#chat-mode-label", Label).update(
-            f"Mode: {next_mode.replace('_', ' ')}  (Press Tab to cycle)"
+            f"mode: {mode_display}   Tab to cycle"
         )
         self.run_worker(self._update_session_mode(next_mode))
 
@@ -318,38 +501,49 @@ class ChatPane(Vertical):
                 from git_reverse.storage.database import SessionDAO
                 session_dao = SessionDAO(self._db)
                 await session_dao.update_mode(self.session_id, mode)
-                self.app.notify(f"Switched mode to {mode.replace('_', ' ')}", severity="information")
+                self.app.notify(
+                    f"Switched mode to {mode.replace('_', ' ')}",
+                    severity="information",
+                )
             except Exception as exc:
                 log.error("failed_to_update_mode", error=str(exc))
 
-    async def _handle_slash_command(self, cmd_str: str, input_widget: ChatInput) -> None:
+    async def _handle_slash_command(self, cmd_str: str, input_widget: Input) -> None:
         parts = cmd_str.split(maxsplit=1)
         cmd = parts[0].lower()
 
         chat_area = self.query_one("#chat-area", ChatArea)
 
         if cmd == "/settings":
-            self.app.action_switch_model()
+            if hasattr(self.app, "action_switch_model"):
+                self.app.action_switch_model()
 
         elif cmd in ("/compact", "/summarize"):
             chat_area.mount(UserMessageWidget(f"Command: {cmd_str}"))
-            summary_widget = AssistantMessageWidget("Generating summary...")
-            chat_area.mount(summary_widget)
+            # Mount thinking panel first
+            think_panel = ThinkingPanel()
+            chat_area.mount(think_panel)
             chat_area.scroll_end()
             self._run_query_worker(
                 "Please generate a compact summary of this conversation.",
-                summary_widget,
+                think_panel,
                 input_widget
             )
 
         elif cmd == "/deep_dive":
             chat_area.mount(UserMessageWidget(f"Command: {cmd_str}"))
-            deep_widget = AssistantMessageWidget("Initiating deep architecture scan...")
-            chat_area.mount(deep_widget)
+            # Mount thinking panel first
+            think_panel = ThinkingPanel()
+            chat_area.mount(think_panel)
             chat_area.scroll_end()
+            prompt = (
+                "Generate a highly structured blueprint prompt detailing the "
+                "folder structure, AST architecture, schemas, and logic of "
+                "this codebase so that a developer can recreate it from scratch."
+            )
             self._run_query_worker(
-                "Generate a highly structured blueprint prompt detailing the folder structure, AST architecture, schemas, and logic of this codebase so that a developer can recreate it from scratch.",
-                deep_widget,
+                prompt,
+                think_panel,
                 input_widget
             )
 
@@ -375,7 +569,8 @@ class ChatPane(Vertical):
         else:
             chat_area.mount(UserMessageWidget(f"Command: {cmd_str}"))
             err_widget = AssistantMessageWidget(
-                f"Unknown command: `{cmd}`. Available: `/settings`, `/compact`, `/deep_dive`, `/section`"
+                f"Unknown command: `{cmd}`. Available: "
+                f"`/settings`, `/compact`, `/deep_dive`, `/section`"
             )
             chat_area.mount(err_widget)
             chat_area.scroll_end()

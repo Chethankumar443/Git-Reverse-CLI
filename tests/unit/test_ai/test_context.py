@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 import pytest
 
 from git_reverse.ai.context import ContextCompiler
-from git_reverse.storage.database import Database, Repository, RepositoryDAO, Node
+from git_reverse.storage.database import Database, Repository, RepositoryDAO
 
 
 @pytest.mark.asyncio
@@ -24,11 +22,13 @@ async def test_compile_context(db: Database) -> None:
     )
 
     # 2. Insert mock nodes
+    insert_sql = (
+        "INSERT INTO nodes (id, repo_id, type, name, file_path, "
+        "start_line, end_line, content, metadata) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    )
     await db.conn.execute(
-        """
-        INSERT INTO nodes (id, repo_id, type, name, file_path, start_line, end_line, content, metadata)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
+        insert_sql,
         (
             "node-module-1",
             "repo-ai-test",
@@ -42,10 +42,7 @@ async def test_compile_context(db: Database) -> None:
         ),
     )
     await db.conn.execute(
-        """
-        INSERT INTO nodes (id, repo_id, type, name, file_path, start_line, end_line, content, metadata)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
+        insert_sql,
         (
             "node-func-1",
             "repo-ai-test",
@@ -68,7 +65,9 @@ async def test_compile_context(db: Database) -> None:
     assert "src/main.py" in context
 
     # 4. Compile context with query containing keyword match
-    query_context = await compiler.compile_context(repo_id="repo-ai-test", query="calculate sum function")
+    query_context = await compiler.compile_context(
+        repo_id="repo-ai-test", query="calculate sum function"
+    )
     assert "calculate_sum" in query_context
     assert "def calculate_sum(a, b):" in query_context
     assert "complexity=1" in query_context

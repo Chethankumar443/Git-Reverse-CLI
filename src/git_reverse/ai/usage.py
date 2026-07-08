@@ -82,11 +82,13 @@ class UsageTracker:
             created_at=datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         )
 
+        insert_sql = (
+            "INSERT INTO token_usage (id, session_id, prompt_tokens, "
+            "completion_tokens, model, cost_usd, latency_ms, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+        )
         await self._db.conn.execute(
-            """
-            INSERT INTO token_usage (id, session_id, prompt_tokens, completion_tokens, model, cost_usd, latency_ms, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """,
+            insert_sql,
             (
                 record.id,
                 record.session_id,

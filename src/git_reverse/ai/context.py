@@ -40,10 +40,11 @@ class ContextCompiler:
         frameworks = meta.get("frameworks", {})
 
         # 2. Get high-level file list
-        async with self._db.conn.execute(
-            "SELECT file_path, type, name FROM nodes WHERE repo_id = ? AND type = 'module' ORDER BY file_path",
-            (repo_id,),
-        ) as cursor:
+        query_sql = (
+            "SELECT file_path, type, name FROM nodes WHERE repo_id = ? "
+            "AND type = 'module' ORDER BY file_path"
+        )
+        async with self._db.conn.execute(query_sql, (repo_id,)) as cursor:
             files_rows = list(await cursor.fetchall())
 
         # Compile header details
@@ -102,10 +103,11 @@ class ContextCompiler:
                         )
         else:
             # Summarized structure overview
-            async with self._db.conn.execute(
-                "SELECT * FROM nodes WHERE repo_id = ? AND type IN ('class', 'struct', 'trait') LIMIT 20",
-                (repo_id,),
-            ) as cursor:
+            query_sql = (
+                "SELECT * FROM nodes WHERE repo_id = ? "
+                "AND type IN ('class', 'struct', 'trait') LIMIT 20"
+            )
+            async with self._db.conn.execute(query_sql, (repo_id,)) as cursor:
                 structures = list(await cursor.fetchall())
 
             if structures:

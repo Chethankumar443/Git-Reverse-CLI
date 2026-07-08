@@ -7,13 +7,12 @@ from __future__ import annotations
 
 import pytest
 
-from git_reverse.core.exceptions import DatabaseError, SessionNotFoundError
+from git_reverse.core.exceptions import SessionNotFoundError
 from git_reverse.storage.database import (
     Database,
     MessageDAO,
     Repository,
     RepositoryDAO,
-    Session,
     SessionDAO,
     generate_session_id,
 )
